@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from paho.mqtt.client import Client
-from backend.core import mqtt_client # mqtt 설정 가져오기
+from backend.infra.mqtt import mqtt_client # mqtt 설정 가져오기
 
 router = APIRouter()
 

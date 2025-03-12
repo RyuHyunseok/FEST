@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from services.mqtt_service import start_mqtt_listener
-from backend.core.websocket import setup_websocket, websocket_lifespan
+from api.v1.services.mqtt_service import start_mqtt_listener
+from infra.websocket.websocket import setup_websocket, websocket_lifespan
 
 # 애플리케이션 lifespan 이벤트 핸들러
 @asynccontextmanager
