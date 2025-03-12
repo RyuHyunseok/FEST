@@ -1,6 +1,6 @@
 import json
 import redis
-from config.mqtt_client import mqtt_client, connect_mqtt  # mqtt_client import
+from core.mqtt_client import mqtt_client, connect_mqtt  # mqtt_client import
 from paho.mqtt.client import Client
 
 # Redis 연결 설정
