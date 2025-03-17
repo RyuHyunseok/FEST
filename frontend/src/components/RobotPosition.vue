@@ -41,7 +41,7 @@ export default {
     // WebSocket 연결 설정
     const setupWebSocket = () => {
       console.log('표준 WebSocket 연결 시도 중...');
-      ws.value = new WebSocket('ws://localhost:8000/ws/robot');
+      ws.value = new WebSocket('ws://127.0.0.1:8000/ws/robots');
       
       ws.value.onopen = () => {
         connected.value = true;
@@ -56,16 +56,26 @@ export default {
       };
       
       ws.value.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('위치 업데이트 수신:', data);
-          position.x = data.x;
-          position.y = data.y;
-          position.orientation = data.orientation;
-        } catch (error) {
-          console.error('메시지 파싱 오류:', error);
-        }
-      };
+  try {
+    const data = JSON.parse(event.data);
+    console.log('웹소켓 데이터 수신:', data);
+    
+    // 로봇 데이터가 존재하는지 확인
+    if (data.robots && Object.keys(data.robots).length > 0) {
+      const robotId = Object.keys(data.robots)[0]; // 첫 번째 로봇
+      const robotData = data.robots[robotId];
+      
+      // 위치 데이터가 있는지 확인
+      if (robotData.position) {
+        position.x = robotData.position.x;
+        position.y = robotData.position.y;
+        position.orientation = robotData.position.orientation;
+      }
+    }
+  } catch (error) {
+    console.error('메시지 파싱 오류:', error);
+  }
+};
       
       ws.value.onerror = (error) => {
         console.error('WebSocket 오류:', error);

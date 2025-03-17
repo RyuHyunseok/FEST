@@ -1,10 +1,33 @@
 import json
 import redis
+import uuid
+import time
 from infra.mqtt.mqtt_client import mqtt_client, connect_mqtt  # mqtt_client import
 from paho.mqtt.client import Client
+from db.database import SessionLocal
+from models.position import RobotPosition
+from models.robot import Robot
+from sqlalchemy import func
+from geoalchemy2.functions import ST_MakePoint
 
 # Redis 연결 설정
 redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+
+# 위치 데이터 샘플링을 위한 설정
+POSITION_SAMPLE_INTERVAL = 10  # 10초마다 위치 데이터 저장
+last_position_save = {}        # 로봇별 마지막 저장 시간 추적용 딕셔너리
+
+# 위치 데이터를 샘플링할지 결정하는 함수
+def should_sample_position(robot_id):
+    current_time = time.time()
+    last_save_time = last_position_save.get(robot_id, 0)
+    
+    # 마지막 저장 후 일정 시간(POSITION_SAMPLE_INTERVAL)이 지났는지 확인
+    if current_time - last_save_time >= POSITION_SAMPLE_INTERVAL:
+        last_position_save[robot_id] = current_time
+        return True
+    
+    return False
 
 # MQTT 메시지 수신 콜백 함수
 def on_message(client, userdata, msg):
@@ -14,18 +37,105 @@ def on_message(client, userdata, msg):
 
         print(f"Received message on topic {topic}: {message}")
 
-        # Redis에 저장 (예: 최신 위치 데이터를 저장)
-        redis_client.set("latest_position", json.dumps(message))
+        # 위치 정보 처리 (topic: robots/{robot_id}/position)
+        if "position" in topic:
+            # 토픽에서 로봇 ID 추출 (형식: robots/{robot_id}/position)
+            parts = topic.split('/')
+            if len(parts) >= 3:
+                robot_id = parts[1]
+                
+                # Redis에 최신 위치 저장 (로봇별)
+                redis_client.set(f"robot:{robot_id}:position", json.dumps(message))
+                
+                # 데이터베이스에 위치 기록 저장 (샘플링 적용)
+                # 성능을 위해 모든 데이터를 저장하지 않고 일부만 저장
+                should_save = should_sample_position(robot_id)
+                if should_save:
+                    save_position_to_db(robot_id, message)
+        
+        # 상태 정보 처리 (topic: robots/{robot_id}/status)
+        elif "status" in topic:
+            # 토픽에서 로봇 ID 추출 (형식: robots/{robot_id}/status)
+            parts = topic.split('/')
+            if len(parts) >= 3:
+                robot_id = parts[1]
+                
+                # Redis에 최신 상태 저장 (로봇별)
+                redis_client.set(f"robot:{robot_id}:status", json.dumps(message))
+                
+                # 참고: 상태 정보는 Redis에만 저장하고 PostgreSQL에는 저장하지 않음
+                # 실시간 모니터링에만 사용하므로 영구 저장은 하지 않음
+        
+        # 화재 정보 처리 (topic: incidents/new)
+        elif topic == "incidents/new":
+            # Redis에 최신 화재 정보 저장
+            incident_id = message.get("incident_id", f"fire_{uuid.uuid4().hex[:8]}")
+            redis_client.set(f"incident:{incident_id}", json.dumps(message))
+            
+            # 데이터베이스에 화재 정보 저장 (이 부분은 나중에 구현)
+            # save_incident_to_db(incident_id, message)
 
     except Exception as e:
         print(f"Error processing message: {e}")
 
+def save_position_to_db(robot_id, position_data):
+    """로봇 위치 데이터를 데이터베이스에 저장"""
+    try:
+        db = SessionLocal()
+        
+        # 먼저 로봇이 존재하는지 확인
+        robot = db.query(Robot).filter(Robot.robot_id == robot_id).first()
+        if not robot:
+            # 로봇이 없으면 새로 생성
+            robot = Robot(robot_id=robot_id, name=f"Robot {robot_id}")
+            db.add(robot)
+            db.commit()
+        
+        # 위치 데이터 생성
+        x = position_data.get("x", 0)
+        y = position_data.get("y", 0)
+        orientation = position_data.get("orientation", 0)
+        
+        # PostGIS 포인트 생성 (ST_MakePoint)
+        point = func.ST_SetSRID(ST_MakePoint(x, y), 4326)
+        
+        # 로봇 위치 저장 (x, y는 position에 포함, orientation은 별도 저장)
+        position = RobotPosition(
+            robot_id=robot_id,
+            position=point,
+            orientation=orientation
+        )
+        
+        db.add(position)
+        db.commit()
+        print(f"Saved position data to database: {position}")
+        
+    except Exception as e:
+        print(f"Error saving position to database: {e}")
+    finally:
+        db.close()
+
+# MQTT 클라이언트 참조
+_mqtt_client = None
+
 # MQTT 클라이언트 설정 및 시작
 def start_mqtt_listener():
-    mqtt_client = connect_mqtt()  # MQTT 연결 설정
-    mqtt_client.on_message = on_message  # 메시지 수신 시 호출될 콜백 함수 설정
+    global _mqtt_client
+    _mqtt_client = connect_mqtt()  # MQTT 연결 설정
+    _mqtt_client.on_message = on_message  # 메시지 수신 시 호출될 콜백 함수 설정
 
     # 메시지 구독
-    mqtt_client.subscribe("robot/position")  # ROS2에서 publish한 topic
+    _mqtt_client.subscribe("robots/+/position")  # 모든 로봇 위치 정보 (+ 는 와일드카드)
+    _mqtt_client.subscribe("robots/+/status")    # 모든 로봇 상태 정보
+    _mqtt_client.subscribe("incidents/new")       # 새 화재 발생 정보
 
-    mqtt_client.loop_start()  # 비동기 구독 시작
+    _mqtt_client.loop_start()  # 비동기 구독 시작
+    print("MQTT 리스너가 시작되었습니다.")
+
+# MQTT 클라이언트 종료
+def stop_mqtt_listener():
+    global _mqtt_client
+    if _mqtt_client:
+        print("MQTT 리스너 종료 중...")
+        _mqtt_client.loop_stop()
+        print("MQTT 리스너가 종료되었습니다.")
