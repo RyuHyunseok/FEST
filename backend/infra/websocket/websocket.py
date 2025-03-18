@@ -1,8 +1,11 @@
 import json
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Query, HTTPException, status
 import redis
 import asyncio
 from contextlib import asynccontextmanager
+
+from jose import JWTError, jwt
+from core.config import SECRET_KEY, ALGORITHM
 
 # Redis 클라이언트 설정
 redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
@@ -32,6 +35,25 @@ manager = ConnectionManager()
 
 # 위치 데이터 브로드캐스트 태스크
 broadcast_task = None
+
+
+# WebSocket 토큰 검증 함수
+async def verify_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if username is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token"
+            )
+        return username
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token"
+        )
+
 
 async def broadcast_robots_data():
     """로봇 데이터(위치, 상태)를 WebSocket으로 브로드캐스트"""
@@ -123,37 +145,62 @@ async def broadcast_robots_data():
 def setup_websocket(app: FastAPI):
     # 로봇 데이터를 위한 WebSocket 엔드포인트
     @app.websocket("/ws/robots")
-    async def robots_websocket_endpoint(websocket: WebSocket):
-        await manager.connect(websocket)
-        
+    async def robots_websocket_endpoint(
+        websocket: WebSocket,
+        token: str = Query(...)
+    ):
         try:
-            # 클라이언트에서 오는 메시지 처리 (필요한 경우)
-            while True:
-                data = await websocket.receive_text()
-                print(f"Received message from client (robots): {data}")
-                
-        except WebSocketDisconnect:
-            manager.disconnect(websocket)
-        except Exception as e:
-            print(f"Error in WebSocket connection: {e}")
-            manager.disconnect(websocket)
-    
-    # 화재 데이터를 위한 WebSocket 엔드포인트
+            # 토큰 검증
+            await verify_token(token)
+
+            # 토큰이 유효한 경우 연결 수락락    
+            await manager.connect(websocket)
+        
+            try:
+                # 클라이언트에서 오는 메시지 처리 (필요한 경우)
+                while True:
+                    data = await websocket.receive_text()
+                    print(f"Received message from client (robots): {data}")
+                    
+            except WebSocketDisconnect:
+                manager.disconnect(websocket)
+            except Exception as e:
+                print(f"Error in WebSocket connection: {e}")
+                manager.disconnect(websocket)
+
+        except HTTPException as e:
+            # 토큰 검증 실패 시 연결 거부
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason=e.detail)
+
+    # 화재 데이터를 위한 WebSocket 엔드포인트(인증 추가)
     @app.websocket("/ws/incidents")
-    async def incidents_websocket_endpoint(websocket: WebSocket):
-        await manager.connect(websocket)
+    async def incidents_websocket_endpoint(
+        websocket: WebSocket,
+        token: str = Query(...) # 쿼리 파라미터로 토큰 받기
+    ):
         
         try:
-            # 클라이언트에서 오는 메시지 처리 (필요한 경우)
-            while True:
-                data = await websocket.receive_text()
-                print(f"Received message from client (incidents): {data}")
-                
-        except WebSocketDisconnect:
-            manager.disconnect(websocket)
-        except Exception as e:
-            print(f"Error in WebSocket connection: {e}")
-            manager.disconnect(websocket)
+            # 토큰 검증
+            await verify_token(token)
+
+            # 토큰이 유효한 경우 연결 수락
+            await manager.connect(websocket)
+        
+            try:
+                # 클라이언트에서 오는 메시지 처리 (필요한 경우)
+                while True:
+                    data = await websocket.receive_text()
+                    print(f"Received message from client (incidents): {data}")
+                    
+            except WebSocketDisconnect:
+                manager.disconnect(websocket)
+            except Exception as e:
+                print(f"Error in WebSocket connection: {e}")
+                manager.disconnect(websocket)
+
+        except HTTPException as e:
+            # 토큰 검증 실패 시 연결 거부
+            await websocket.close(code=status.WS_1008_POLICY_VIOLATION, reason=e.detail)
 
 # Lifespan 컨텍스트 매니저 생성
 @asynccontextmanager
