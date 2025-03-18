@@ -192,7 +192,7 @@ public:
         params.OCCUPANCY_DOWN = 0.01;
         params.MAP_CENTER = {0.0, 0.0};
         params.MAP_SIZE = {20.0, 20.0};
-        params.MAP_FILENAME = "C:\\Users\\SSAFY\\Desktop\\catkin_ws\\src\\auto_package_cpp\\path\\map.pgm";
+        params.MAP_FILENAME = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\map.pgm)";
         params.MAPVIS_RESIZE_SCALE = 2.0;
         
         mapping_ = std::make_unique<Mapping>(params);

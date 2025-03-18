@@ -30,7 +30,7 @@ public:
     global_path_msg_.header.frame_id = "map";
     
     // Read path from file
-    std::ifstream file("C:\\Users\\SSAFY\\Desktop\\catkin_ws\\src\\auto_package_cpp\\path\\test.txt");
+    std::ifstream file(R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\test.txt)");
     if (not file.is_open()) {
       RCLCPP_ERROR(this->get_logger(), "Failed to open path file");
       return;

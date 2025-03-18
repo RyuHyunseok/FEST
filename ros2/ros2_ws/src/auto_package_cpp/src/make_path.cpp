@@ -22,7 +22,7 @@ public:
             "/odom", 10, std::bind(&MakePath::listener_callback, this, std::placeholders::_1));
         
         // 파일 열기 (절대 경로 사용)
-        file_.open("C:\\Users\\SSAFY\\Desktop\\catkin_ws\\src\\auto_package_cpp\\path\\test_save.txt", std::ios::out);
+        file_.open(R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\test_save.txt)", std::ios::out);
         
         // Path 메시지 초기화
         path_msg_.header.frame_id = "map";

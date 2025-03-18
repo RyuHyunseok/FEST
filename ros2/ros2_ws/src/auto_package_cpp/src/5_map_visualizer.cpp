@@ -10,8 +10,8 @@ class MapVisualizerNode : public rclcpp::Node {
 public:
     MapVisualizerNode() : Node("map_visualizer") {
         // 맵 파일 경로 설정
-        map_filename_ = R"(C:\Users\SSAFY\Desktop\catkin_ws\src\auto_package_cpp\path\map.pgm)";
-        cost_map_filename_ = R"(C:\Users\SSAFY\Desktop\catkin_ws\src\auto_package_cpp\path\cost_map.pgm)";
+        map_filename_ = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\map.pgm)";
+        cost_map_filename_ = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\cost_map.pgm)";
         
         // 파라미터 설정
         inflation_radius_ = 0.3;  // 30cm
