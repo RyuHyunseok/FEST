@@ -1,8 +1,11 @@
 annotated-types==0.7.0
 anyio==4.8.0
+bcrypt==4.3.0
 bidict==0.23.1
+cffi==1.17.1
 click==8.1.8
 colorama==0.4.6
+cryptography==44.0.2
 ecdsa==0.19.1
 fastapi==0.115.11
 GeoAlchemy2==0.17.1
@@ -11,8 +14,10 @@ h11==0.14.0
 idna==3.10
 packaging==24.2
 paho-mqtt==2.1.0
+passlib==1.7.4
 psycopg2-binary==2.9.10
 pyasn1==0.4.8
+pycparser==2.22
 pydantic==2.10.6
 pydantic_core==2.27.2
 python-dotenv==1.0.1
