@@ -35,7 +35,7 @@ def on_message(client, userdata, msg):
         message = json.loads(msg.payload.decode())  # JSON 데이터 변환
         topic = msg.topic
 
-        print(f"Received message on topic {topic}: {message}")
+        # print(f"Received message on topic {topic}: {message}")
 
         # 위치 정보 처리 (topic: robots/{robot_id}/position)
         if "position" in topic:
