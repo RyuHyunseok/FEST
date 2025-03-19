@@ -8,7 +8,7 @@ class Incident(Base):
     
     incident_id = Column(String(50), primary_key=True, index=True)
     location = Column(Geometry("POINT", srid=4326))  # PostGIS 공간 데이터 타입
-    severity = Column(String(20), default="medium")  # low, medium, high
+    # severity = Column(String(20), default="medium")  # low, medium, high
     status = Column(String(20), default="active")  # active, assigned, extinguished
     detected_at = Column(DateTime, default=func.now())
     extinguished_at = Column(DateTime, nullable=True)

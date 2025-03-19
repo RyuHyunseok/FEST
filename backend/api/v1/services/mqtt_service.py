@@ -7,8 +7,11 @@ from paho.mqtt.client import Client
 from db.database import SessionLocal
 from models.position import RobotPosition
 from models.robot import Robot
+from models.incident import Incident
 from sqlalchemy import func
 from geoalchemy2.functions import ST_MakePoint
+import datetime
+
 
 # Redis 연결 설정
 redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
@@ -32,7 +35,7 @@ def should_sample_position(robot_id):
 # MQTT 메시지 수신 콜백 함수
 def on_message(client, userdata, msg):
     try:
-        message = json.loads(msg.payload.decode())  # JSON 데이터 변환
+        message = json.loads(msg.payload.decode())  # JSON 데이터를 dictionary 객체로 변환
         topic = msg.topic
 
         # print(f"Received message on topic {topic}: {message}")
@@ -72,8 +75,21 @@ def on_message(client, userdata, msg):
             incident_id = message.get("incident_id", f"fire_{uuid.uuid4().hex[:8]}")
             redis_client.set(f"incident:{incident_id}", json.dumps(message))
             
-            # 데이터베이스에 화재 정보 저장 (이 부분은 나중에 구현)
-            # save_incident_to_db(incident_id, message)
+            # 데이터베이스에 화재 정보 저장
+            save_incident_to_db(incident_id, message)
+
+        # 화재 상태 업데이트 처리 (topic: incidents/{incident_id}/status)
+        elif "incidents" in topic and "status" in topic:
+            # 토픽에서 화재 ID 추출 (형식: incidents/{incident_id}/status)
+            parts = topic.split('/')
+            if len(parts) >= 3:
+                incident_id = parts[1]
+                
+                # Redis에 최신 상태 저장
+                redis_client.set(f"incident:{incident_id}", json.dumps(message))
+                
+                # 데이터베이스에 상태 업데이트 저장
+                save_incident_to_db(incident_id, message)
 
     except Exception as e:
         print(f"Error processing message: {e}")
@@ -114,6 +130,48 @@ def save_position_to_db(robot_id, position_data):
         print(f"Error saving position to database: {e}")
     finally:
         db.close()
+
+def save_incident_to_db(incident_id, incident_data):
+    """화재 사고 데이터를 데이터베이스에 저장"""
+    try:
+        db = SessionLocal()
+        
+        # 위치 데이터 추출
+        location = incident_data.get("location", {})
+        x = location.get("x", 0)
+        y = location.get("y", 0)
+        
+        # 기존 화재 사고가 있는지 확인
+        incident = db.query(Incident).filter(Incident.incident_id == incident_id).first()
+        
+        if not incident:
+            # PostGIS 포인트 생성
+            point = func.ST_SetSRID(ST_MakePoint(x, y), 4326)
+            
+            # 새 화재 사고 생성
+            incident = Incident(
+                incident_id=incident_id,
+                location=point,
+                # severity=incident_data.get("severity", "medium"),
+                status=incident_data.get("status", "active")
+            )
+            db.add(incident)
+        else:
+            # 기존 화재 사고 업데이트
+            if "status" in incident_data:
+                incident.status = incident_data["status"]
+            if "extinguished_at" in incident_data:
+                incident.extinguished_at = datetime.fromtimestamp(incident_data["extinguished_at"] / 1000.0)
+        
+        db.commit()
+        print(f"Saved incident data to database: {incident}")
+        
+    except Exception as e:
+        print(f"Error saving incident to database: {e}")
+    finally:
+        db.close()
+
+
 
 # MQTT 클라이언트 참조
 _mqtt_client = None
