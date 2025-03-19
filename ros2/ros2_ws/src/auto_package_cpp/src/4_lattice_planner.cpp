@@ -64,7 +64,26 @@ private:
 
         static double current_offset = 0.0;  // 현재 사용 중인 오프셋 저장
 
-        // 각 오프셋에 대해 후보 경로 생성
+        // 단일 경로만 생성 (중앙 경로)
+        nav_msgs::msg::Path single_path;
+        single_path.header.frame_id = "map";
+        single_path.header.stamp = this->now();
+        
+        for (size_t i = 0; i < local_path_size_; ++i) {
+            size_t current_idx = closest_idx + i;
+            if (current_idx >= global_path_msg_.poses.size()) break;
+
+            geometry_msgs::msg::PoseStamped pose = global_path_msg_.poses[current_idx];
+            // 오프셋 없이 원래 경로 사용
+            single_path.poses.push_back(pose);
+            all_candidates.poses.push_back(pose);
+        }
+        
+        candidate_paths.push_back(single_path);
+        current_local_path_ = single_path;
+
+        /*
+        // 각 오프셋에 대해 후보 경로 생성 (주석 처리된 원래 코드)
         for (double offset : lateral_steps_) {
             nav_msgs::msg::Path candidate_path;
             candidate_path.header.frame_id = "map";
@@ -155,6 +174,7 @@ private:
                 }
             }
         }
+        */
 
         // 후보 경로들 발행 (시각화용)
         candidate_paths_pub_->publish(all_candidates);

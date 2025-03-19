@@ -93,7 +93,7 @@ private:
         // OccupancyGrid 데이터로 변환
         map_msg_.data.resize(buffer.size());
         for (size_t i = 0; i < buffer.size(); ++i) {
-            map_msg_.data[i] = static_cast<int8_t>(100 - (buffer[i] * 100 / 255));
+            map_msg_.data[i] = static_cast<int8_t>((buffer[i] * 100 / 255));
         }
 
         return true;

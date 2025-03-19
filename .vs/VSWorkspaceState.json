@@ -1,0 +1,12 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\ros2",
+    "\\ros2\\ros2_ws",
+    "\\ros2\\ros2_ws\\src",
+    "\\ros2\\ros2_ws\\src\\auto_package_cpp",
+    "\\ros2\\ros2_ws\\src\\auto_package_cpp\\src"
+  ],
+  "SelectedNode": "\\ros2\\ros2_ws\\src\\auto_package_cpp\\src\\1_odom_node.cpp",
+  "PreviewInSolutionExplorer": false
+}
