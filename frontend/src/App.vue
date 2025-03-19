@@ -5,7 +5,7 @@
     </v-app-bar>
 
     <v-main>
-      <RobotPosition />
+      <router-view></router-view>
     </v-main>
 
     <v-footer app color="primary" dark>
@@ -15,12 +15,7 @@
 </template>
 
 <script>
-import RobotPosition from './components/RobotPosition.vue';
-
 export default {
-  name: 'App',
-  components: {
-    RobotPosition
-  }
+  name: 'App'
 };
 </script>
