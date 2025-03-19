@@ -15,7 +15,7 @@ class SmoothPositionPublisher(Node):
 
         # MQTT 설정
         self.mqtt_client = mqtt.Client()
-        self.mqtt_client.connect('localhost', 1883, 60)  # MQTT 브로커 연결
+        self.mqtt_client.connect('localhost', 1883, 60)  # MQTT 브로커 연결 (MQTT 브로커의 주소, MQTT 기본 포트, Keep-Alive 시간(60초 마다 브로커에게 ping 메시지 보냄))
         self.position_topic = f"robots/{self.robot_id}/position"  # 로봇 위치 토픽
         self.status_topic = f"robots/{self.robot_id}/status"  # 로봇 상태 토픽
 
@@ -37,7 +37,10 @@ class SmoothPositionPublisher(Node):
         self.status_timer = self.create_timer(5.0, self.publish_status)  # 5초마다 상태 발행
         
         # 테스트용 화재 발생 시뮬레이션 타이머 (30초마다)
-        self.fire_timer = self.create_timer(30.0, self.simulate_fire)
+        # self.fire_timer = self.create_timer(30.0, self.simulate_fire)
+
+        # 테스트용 화재 발생 시뮬레이션 타이머 (10초 후 한 번만 발생)
+        self.create_timer(10.0, self.simulate_fire)
 
     def publish_position(self):
         # 현재 방향(각도)을 라디안으로 변환
@@ -74,7 +77,21 @@ class SmoothPositionPublisher(Node):
         }
 
         # MQTT로 상태 메시지 발행
-        self.mqtt_client.publish(self.status_topic, json.dumps(status_data))
+        self.mqtt_client.publish(self.status_topic, json.dumps(status_data)) # json.dumps : dict 객체를 문자열로 변환(통신할 때는 객체가 아니라 json 형태의 문자열로 통신함)
+        
+        # client.publish(topic, payload) 
+        # paypload : 메시지의 "내용", 브로커로 전송될 실제 데이터
+
+        # 직렬화
+        """
+        직렬화(Serialization)
+        : 네트워크를 통해 전송할 수 있도록 변환하는 과정
+        
+        예를 들어, 딕셔너리(dict) -> JSON 문자열로 변환시키는 것(직렬화)
+        반대로 역직렬화(Deserialization)는 JSON 데이터를 다시 Python 객체로 변환하는 과정을 말함.
+
+        """
+
         self.get_logger().info(f'Publishing status to MQTT: {status_data}')
     
     def simulate_fire(self):
@@ -90,7 +107,8 @@ class SmoothPositionPublisher(Node):
         fire_data = {
             "incident_id": fire_id,
             "location": {"x": round(fire_x, 2), "y": round(fire_y, 2)},
-            "severity": random.choice(["low", "medium", "high"]),
+            # "severity": random.choice(["low", "medium", "high"]),
+            "status": "active",
             "detected_at": int(self.get_clock().now().nanoseconds / 1000000)  # 밀리초로 변환
         }
         
