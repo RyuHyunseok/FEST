@@ -131,6 +131,12 @@ private:
                     // 각속도 게인을 줄여 급격한 회전 방지
                     double angular_gain = 1.5;  // 2.0에서 감소
                     cmd_msg_.angular.z = theta * angular_gain;
+
+                    // 급격한 회전 시 멈추고 회전만 수행
+                    double angular_threshold = M_PI * 3 / 4;  // 임계값 설정 (라디안)
+                    if (abs_theta > angular_threshold) {
+                        cmd_msg_.linear.x = 0.0;  // 선속도 0으로 설정
+                    }
                     
                     RCLCPP_INFO(this->get_logger(), 
                         "theta: %f, speed: %f", 

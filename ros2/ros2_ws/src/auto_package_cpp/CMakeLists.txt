@@ -121,8 +121,45 @@ ament_target_dependencies(map_visualizer
   "nav_msgs"
 )
 
+# a_star_planner 노드 추가
+# add_executable(a_star_planner src/a_star_planner.cpp)
+# ament_target_dependencies(a_star_planner
+#   "rclcpp"
+#   "nav_msgs"
+#   "geometry_msgs"
+#   "ssafy_msgs"
+#   "visualization_msgs"
+# )
+
+# dijkstra_planner 노드 추가
+add_executable(dijkstra_planner src/dijkstra_planner.cpp)
+ament_target_dependencies(dijkstra_planner
+  "rclcpp"
+  "nav_msgs"
+  "geometry_msgs"
+  "ssafy_msgs"
+  "visualization_msgs"
+)
+
+# goal_publisher 노드 추가
+add_executable(goal_publisher src/goal_publisher.cpp)
+ament_target_dependencies(goal_publisher
+  "rclcpp"
+  "geometry_msgs"
+)
+
 # 설치 대상 추가
-install(TARGETS my_node odom_node path_publisher follow_the_carrot make_path lattice_planner mapping_node map_visualizer
+install(TARGETS 
+  my_node 
+  odom_node 
+  path_publisher 
+  follow_the_carrot 
+  make_path 
+  lattice_planner 
+  mapping_node 
+  map_visualizer 
+  dijkstra_planner 
+  goal_publisher
   EXPORT export_${PROJECT_NAME}
   DESTINATION lib/${PROJECT_NAME})
 

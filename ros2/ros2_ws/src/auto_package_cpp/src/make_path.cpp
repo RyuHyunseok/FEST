@@ -11,32 +11,24 @@ using namespace std::chrono_literals;
 
 class MakePath : public rclcpp::Node
 {
-public:
-    MakePath() : Node("make_path"), is_odom_(false), prev_x_(0.0), prev_y_(0.0)
-    {
-        // 발행자 생성
-        path_pub_ = this->create_publisher<nav_msgs::msg::Path>("global_path", 10);
-        
-        // 구독자 생성
-        subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
-            "/odom", 10, std::bind(&MakePath::listener_callback, this, std::placeholders::_1));
-        
-        // 파일 열기 (절대 경로 사용)
-        file_.open(R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\test_save.txt)", std::ios::out);
-        
-        // Path 메시지 초기화
-        path_msg_.header.frame_id = "map";
-    }
-    
-    ~MakePath()
-    {
-        // 파일 닫기
-        if (file_.is_open()) {
-            file_.close();
-        }
-    }
-
 private:
+    // 발행자
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
+    
+    // 구독자
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr subscription_;
+    
+    // 파일 스트림
+    std::ofstream file_;
+    
+    // 상태 변수
+    bool is_odom_;
+    double prev_x_;
+    double prev_y_;
+    
+    // 메시지
+    nav_msgs::msg::Path path_msg_;
+
     void listener_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
     {
         if (!is_odom_) {
@@ -66,22 +58,30 @@ private:
         }
     }
 
-    // 발행자
-    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
+public:
+    MakePath() : Node("make_path"), is_odom_(false), prev_x_(0.0), prev_y_(0.0)
+    {
+        // 발행자 생성
+        path_pub_ = this->create_publisher<nav_msgs::msg::Path>("global_path", 10);
+        
+        // 구독자 생성
+        subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
+            "/odom", 10, std::bind(&MakePath::listener_callback, this, std::placeholders::_1));
+        
+        // 파일 열기 (절대 경로 사용)
+        file_.open(R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\test_save.txt)", std::ios::out);
+        
+        // Path 메시지 초기화
+        path_msg_.header.frame_id = "map";
+    }
     
-    // 구독자
-    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr subscription_;
-    
-    // 파일 스트림
-    std::ofstream file_;
-    
-    // 상태 변수
-    bool is_odom_;
-    double prev_x_;
-    double prev_y_;
-    
-    // 메시지
-    nav_msgs::msg::Path path_msg_;
+    ~MakePath()
+    {
+        // 파일 닫기
+        if (file_.is_open()) {
+            file_.close();
+        }
+    }
 };
 
 int main(int argc, char * argv[])
