@@ -15,22 +15,22 @@ def signal_handler(sig, frame):
     sys.exit(0)
 
 # 종료 신호 등록
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler) # Ctrl + c 와 같은 인터럽트 신호
+signal.signal(signal.SIGTERM, signal_handler) # 시스템 종료
 
 # 애플리케이션 lifespan 이벤트 핸들러
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # 서버 시작 시 실행
     
-    print("Starting MQTT Listener...")
+    print("MQTT Listener 시작")
     start_mqtt_listener()
     
     async with websocket_lifespan(app):
         yield  # 서버 실행 중
     
     # 서버 종료 시 실행
-    print("Shutting down MQTT Listener...")
+    print("MQTT Listener 종료")
     stop_mqtt_listener()
 
 # FastAPI 앱 생성 + Lifespan 적용
@@ -51,7 +51,7 @@ app.add_middleware(
 )
 
 # API 라우터 등록
-app.include_router(api_router, prefix="/api/v1")
+app.include_router(api_router, prefix="/api/v1")    
 
 @app.get("/")
 async def root():

@@ -10,7 +10,7 @@ class Location(BaseModel):
 # 공통 속성 정의
 class IncidentBase(BaseModel):
     location: Location
-    severity: Optional[str] = "medium"  # low, medium, high
+    # severity: Optional[str] = "medium"  # low, medium, high
     status: Optional[str] = "active"  # active, assigned, extinguished
 
 # 화재 사고 생성 시 사용하는 스키마
