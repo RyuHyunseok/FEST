@@ -78,6 +78,25 @@ def on_message(client, userdata, msg):
             # 데이터베이스에 화재 정보 저장
             create_new_incident(incident_id, message)
 
+            # 일단 모든 로봇에게 명령
+            # 나중에 최단 거리 로봇에게 명령하도록 구현
+            robot_keys = redis_client.keys("robot:*:position")
+            for key in robot_keys:
+                parts = key.split(':')
+                if len(parts) >= 3:
+                    robot_id = parts[1]
+
+                    # 로봇 메시지 생성
+                    command = {
+                        'type': 'move_to',
+                        'target': message['location']
+                    }
+
+                    # MQTT로 로봇에게 명령 topic publish
+                    _mqtt_client.publish(f'robots/{robot_id}/command', json.dumps(command))
+                    print(f'화재 발생: 로봇 {robot_id}에게 화재 위치로 이동하라 명령')
+
+
         # 화재 상태 업데이트 처리 (topic: incidents/{incident_id}/status)
         elif topic.startswith("incidents/") and topic.endswith("/status"):
             # 토픽에서 화재 ID 추출 (형식: incidents/{incident_id}/status)
