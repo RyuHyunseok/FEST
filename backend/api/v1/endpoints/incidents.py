@@ -53,45 +53,7 @@ def get_incident(incident_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Incident not found")
     return incident
 
-@router.post("/", response_model=IncidentSchema)
-def create_incident(incident: IncidentCreate, db: Session = Depends(get_db)):
-    """
-    새 화재 생성 (테스트용)
-    """
-    # 고유 ID 생성 (제공되지 않았을 경우)
-    incident_id = incident.incident_id or f"fire_{uuid.uuid4().hex[:8]}"
-    
-    # PostGIS 포인트 생성
-    x = incident.location.x
-    y = incident.location.y
-    point = func.ST_SetSRID(ST_MakePoint(x, y), 4326)
-    
-    # DB에 화재 정보 저장
-    db_incident = Incident(
-        incident_id=incident_id,
-        location=point,
-        severity=incident.severity,
-        status=incident.status
-    )
-    
-    db.add(db_incident)
-    db.commit()
-    db.refresh(db_incident)
-    
-    # Redis에도 저장
-    redis_data = {
-        "incident_id": incident_id,
-        "location": {"x": x, "y": y},
-        "severity": incident.severity,
-        "status": incident.status,
-        "detected_at": datetime.now().isoformat()
-    }
-    redis_client.set(f"incident:{incident_id}", json.dumps(redis_data))
-    
-    # MQTT로 새 화재 알림 발행
-    mqtt_client.publish("incidents/new", json.dumps(redis_data))
-    
-    return db_incident
+
 
 @router.put("/{incident_id}", response_model=IncidentSchema)
 def update_incident(incident_id: str, incident: IncidentUpdate, db: Session = Depends(get_db)):

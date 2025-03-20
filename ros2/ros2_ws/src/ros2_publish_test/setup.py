@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             'smooth_position_publisher = ros2_publish_test.smooth_position_publisher:main',
+            'mqtt_command_subscriber = ros2_publish_test.mqtt_command_subscriber:main'
         ],
     },
 )
