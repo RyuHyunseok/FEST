@@ -141,6 +141,24 @@ ament_target_dependencies(dijkstra_planner
   "visualization_msgs"
 )
 
+# local_cost_map_generator 노드 추가
+add_executable(local_cost_map_generator src/local_cost_map_generator.cpp)
+ament_target_dependencies(local_cost_map_generator
+  "rclcpp"
+  "nav_msgs"
+  "sensor_msgs"
+  "tf2_ros"
+)
+
+# local_path_planner 노드 추가
+add_executable(local_path_planner src/local_path_planner.cpp)
+ament_target_dependencies(local_path_planner
+  "rclcpp"
+  "nav_msgs"
+  "geometry_msgs"
+  "tf2_ros"
+)
+
 # goal_publisher 노드 추가
 add_executable(goal_publisher src/goal_publisher.cpp)
 ament_target_dependencies(goal_publisher
@@ -159,6 +177,8 @@ install(TARGETS
   mapping_node 
   map_visualizer 
   dijkstra_planner 
+  local_cost_map_generator
+  local_path_planner
   goal_publisher
   EXPORT export_${PROJECT_NAME}
   DESTINATION lib/${PROJECT_NAME})

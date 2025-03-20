@@ -1,4 +1,4 @@
-#include "rclcpp/rclcpp.hpp"
+﻿#include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
@@ -59,6 +59,29 @@ public:
     }
 
 private:
+    // 클래스 멤버 변수 선언
+    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
+    rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr goal_sub_;
+    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
+    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
+    nav_msgs::msg::OccupancyGrid map_;
+    bool has_map_;
+    bool has_robot_pose_;
+    bool has_goal_;
+    
+    // 로봇의 초기 위치와 현재 위치 저장
+    double robot_init_x_;
+    double robot_init_y_;
+    double robot_init_theta_;
+    double current_robot_x_;
+    double current_robot_y_;
+    double current_robot_theta_;
+    
+    // 목표점 저장
+    int goal_x_;
+    int goal_y_;
+
     void goal_callback(const geometry_msgs::msg::Point::SharedPtr msg) {
         // 목표점을 맵 좌표계로 변환
         goal_x_ = static_cast<int>((msg->x - map_.info.origin.position.x) / map_.info.resolution);
@@ -136,9 +159,9 @@ private:
         
         // 맵이 5번 업데이트될 때마다 경로 재계획
         //if (has_goal_ && map_update_count_ % 5 == 0) {
-        if (has_goal_) {
-            plan_current_path();
-        }
+        // if (has_goal_) {
+        //     plan_current_path();
+        // }
     }
 
     void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
@@ -350,28 +373,6 @@ private:
 
         path_pub_->publish(path_msg);
     }
-
-    rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
-    rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr goal_sub_;
-    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-    rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
-    rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
-    nav_msgs::msg::OccupancyGrid map_;
-    bool has_map_;
-    bool has_robot_pose_;
-    bool has_goal_;
-    
-    // 로봇의 초기 위치와 현재 위치 저장
-    double robot_init_x_;
-    double robot_init_y_;
-    double robot_init_theta_;
-    double current_robot_x_;
-    double current_robot_y_;
-    double current_robot_theta_;
-    
-    // 목표점 저장
-    int goal_x_;
-    int goal_y_;
 };
 
 int main(int argc, char** argv) {
