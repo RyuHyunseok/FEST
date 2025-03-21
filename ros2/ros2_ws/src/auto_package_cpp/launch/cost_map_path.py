@@ -11,11 +11,11 @@ def generate_launch_description():
             output='screen'
         ),
         
-        # 2. map_visualizer 노드
+        # 2. global_cost_map_generator 노드
         Node(
             package='auto_package_cpp',
-            node_executable='map_visualizer',
-            node_name='map_visualizer',
+            node_executable='global_cost_map_generator',
+            node_name='global_cost_map_generator',
             output='screen'
         ),
         
@@ -27,19 +27,19 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # 4. dijkstra_planner노드
+        # 4. global_dijkstra_path 노드
         Node(
             package='auto_package_cpp',
-            node_executable='dijkstra_planner',
-            node_name='dijkstra_planner',
+            node_executable='global_dijkstra_path',
+            node_name='global_dijkstra_path',
             output='screen'
         ),
 
-        # 5. local_path_planner 노드
+        # 5. local_dijkstra_path 노드
         Node(
             package='auto_package_cpp',
-            node_executable='local_path_planner',
-            node_name='local_path_planner',
+            node_executable='local_dijkstra_path',
+            node_name='local_dijkstra_path',
             output='screen'
         ),
 

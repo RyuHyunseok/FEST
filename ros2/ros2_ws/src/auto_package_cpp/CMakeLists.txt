@@ -54,9 +54,9 @@ ament_target_dependencies(odom_node
   "tf2_ros"
 )
 
-# path_publisher 노드 추가
-add_executable(path_publisher src/2_path_publisher.cpp)
-ament_target_dependencies(path_publisher
+# global_path_publisher 노드 추가
+add_executable(global_path_publisher src/2_global_path_publisher.cpp)
+ament_target_dependencies(global_path_publisher
   "rclcpp"
   "nav_msgs"
   "geometry_msgs"
@@ -81,9 +81,9 @@ ament_target_dependencies(make_path
   "geometry_msgs"
 )
 
-# lattice_planner 노드 추가
-add_executable(lattice_planner src/2_lattice_planner.cpp)
-ament_target_dependencies(lattice_planner
+# local_path_planner 노드 추가
+add_executable(local_path_planner src/2_local_path_planner.cpp)
+ament_target_dependencies(local_path_planner
   "rclcpp"
   "nav_msgs"
   "geometry_msgs"
@@ -114,9 +114,9 @@ ament_target_dependencies(mapping_node
   "Eigen3"
 )
 
-# map_visualizer 노드 추가
-add_executable(map_visualizer src/1_map_visualizer.cpp)
-ament_target_dependencies(map_visualizer
+# global_cost_map_generator 노드 추가
+add_executable(global_cost_map_generator src/1_global_cost_map_generator.cpp)
+ament_target_dependencies(global_cost_map_generator
   "rclcpp"
   "nav_msgs"
 )
@@ -131,9 +131,9 @@ ament_target_dependencies(map_visualizer
 #   "visualization_msgs"
 # )
 
-# dijkstra_planner 노드 추가
-add_executable(dijkstra_planner src/2_dijkstra_planner.cpp)
-ament_target_dependencies(dijkstra_planner
+# global_dijkstra_path 노드 추가
+add_executable(global_dijkstra_path src/2_global_dijkstra_path.cpp)
+ament_target_dependencies(global_dijkstra_path
   "rclcpp"
   "nav_msgs"
   "geometry_msgs"
@@ -150,9 +150,9 @@ ament_target_dependencies(local_cost_map_generator
   "tf2_ros"
 )
 
-# local_path_planner 노드 추가
-add_executable(local_path_planner src/2_local_path_planner.cpp)
-ament_target_dependencies(local_path_planner
+# local_dijkstra_path 노드 추가
+add_executable(local_dijkstra_path src/2_local_dijkstra_path.cpp)
+ament_target_dependencies(local_dijkstra_path
   "rclcpp"
   "nav_msgs"
   "geometry_msgs"
@@ -170,15 +170,15 @@ ament_target_dependencies(goal_publisher
 install(TARGETS 
   my_node 
   odom_node 
-  path_publisher 
+  global_path_publisher 
   follow_the_carrot 
   make_path 
-  lattice_planner 
+  local_path_planner 
   mapping_node 
-  map_visualizer 
-  dijkstra_planner 
+  global_cost_map_generator 
+  global_dijkstra_path 
   local_cost_map_generator
-  local_path_planner
+  local_dijkstra_path
   goal_publisher
   EXPORT export_${PROJECT_NAME}
   DESTINATION lib/${PROJECT_NAME})
