@@ -12,9 +12,13 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include "auto_package_cpp/file_path.hpp"
+
+// 전역 변수 선언 및 초기화
+std::string MAP_FILE = auto_package_cpp::create_file_path("auto_package_cpp", "path/map.pgm");
 
 // 파일 경로를 상수로 정의
-const std::string MAP_FILE = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\map.pgm)";
+// const std::string MAP_FILE = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\map.pgm)";
 
 namespace {
     constexpr double PI = 3.14159265359;

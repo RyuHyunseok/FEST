@@ -6,9 +6,13 @@
 #include <thread>
 #include <fstream>
 #include <vector>
+#include "auto_package_cpp/file_path.hpp"
+
+// 전역 변수 선언 및 초기화
+std::string PATH_FILE = auto_package_cpp::create_file_path("auto_package_cpp", "path/hoom2_path.txt");
 
 // 파일 경로를 상수로 정의
-const std::string PATH_FILE = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\hoom2_path.txt)";
+// const std::string PATH_FILE = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\hoom2_path.txt)";
 
 enum RobotState {
     DRIVING = 0,   // 주행 중
