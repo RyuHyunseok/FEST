@@ -6,12 +6,16 @@
 #include <string>
 #include <cmath>
 
+// 파일 경로를 상수로 정의
+const std::string MAP_FILE = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\map.pgm)";
+const std::string COST_MAP_FILE = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\cost_map.pgm)";
+
 class MapVisualizerNode : public rclcpp::Node {
 public:
     MapVisualizerNode() : Node("map_visualizer") {
         // 맵 파일 경로 설정
-        map_filename_ = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\map.pgm)";
-        cost_map_filename_ = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\cost_map.pgm)";
+        map_filename_ = MAP_FILE;
+        cost_map_filename_ = COST_MAP_FILE;
         
         // 파라미터 설정
         inflation_radius_ = 0.3;  // 30cm

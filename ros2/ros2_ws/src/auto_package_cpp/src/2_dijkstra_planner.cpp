@@ -12,9 +12,11 @@
 #include <memory>
 #include <unordered_map>
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
+const double M_PI = std::acos(-1);
+
+// #ifndef M_PI
+// #define M_PI 3.14159265358979323846
+// #endif
 
 struct DijkstraNode {
     int x, y;

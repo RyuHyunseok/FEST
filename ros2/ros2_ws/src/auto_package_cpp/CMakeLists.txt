@@ -82,7 +82,7 @@ ament_target_dependencies(make_path
 )
 
 # lattice_planner 노드 추가
-add_executable(lattice_planner src/4_lattice_planner.cpp)
+add_executable(lattice_planner src/2_lattice_planner.cpp)
 ament_target_dependencies(lattice_planner
   "rclcpp"
   "nav_msgs"
@@ -115,7 +115,7 @@ ament_target_dependencies(mapping_node
 )
 
 # map_visualizer 노드 추가
-add_executable(map_visualizer src/5_map_visualizer.cpp)
+add_executable(map_visualizer src/1_map_visualizer.cpp)
 ament_target_dependencies(map_visualizer
   "rclcpp"
   "nav_msgs"
@@ -132,7 +132,7 @@ ament_target_dependencies(map_visualizer
 # )
 
 # dijkstra_planner 노드 추가
-add_executable(dijkstra_planner src/dijkstra_planner.cpp)
+add_executable(dijkstra_planner src/2_dijkstra_planner.cpp)
 ament_target_dependencies(dijkstra_planner
   "rclcpp"
   "nav_msgs"
@@ -142,7 +142,7 @@ ament_target_dependencies(dijkstra_planner
 )
 
 # local_cost_map_generator 노드 추가
-add_executable(local_cost_map_generator src/local_cost_map_generator.cpp)
+add_executable(local_cost_map_generator src/1_local_cost_map_generator.cpp)
 ament_target_dependencies(local_cost_map_generator
   "rclcpp"
   "nav_msgs"
@@ -151,7 +151,7 @@ ament_target_dependencies(local_cost_map_generator
 )
 
 # local_path_planner 노드 추가
-add_executable(local_path_planner src/local_path_planner.cpp)
+add_executable(local_path_planner src/2_local_path_planner.cpp)
 ament_target_dependencies(local_path_planner
   "rclcpp"
   "nav_msgs"

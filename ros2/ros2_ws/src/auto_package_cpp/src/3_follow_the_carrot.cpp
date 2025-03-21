@@ -4,18 +4,29 @@
 #include "ssafy_msgs/msg/turtlebot_status.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
+#include "std_msgs/msg/int32.hpp"
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <cmath>
 #include <vector>
 #include <algorithm>
 
+const double M_PI = std::acos(-1);
+
 // M_PI 정의 추가
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
+// #ifndef M_PI
+// #define M_PI 3.14159265358979323846
+// #endif
 
 using namespace std::chrono_literals;
+
+// 로봇 상태를 나타내기 위한 열거형
+enum RobotState {
+    DRIVING = 0,   // 주행 중
+    STOPPED = 1,   // 정지 상태
+    ARRIVED = 2,   // 목적지 도착
+    INITIALIZING = 3 // 초기화 상태
+};
 
 class FollowTheCarrot : public rclcpp::Node
 {
@@ -27,10 +38,14 @@ public:
                         robot_yaw_(0.0),
                         lfd_(0.1),
                         min_lfd_(0.3),
-                        max_lfd_(3.0) {
+                        max_lfd_(3.0),
+                        current_state_(INITIALIZING),
+                        stop_count_(0),
+                        destination_radius_(0.5) { // 목적지 도착 반경 30cm
         
-        // Publisher
+        // Publishers
         cmd_pub_ = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
+        state_pub_ = this->create_publisher<std_msgs::msg::Int32>("robot_state", 10);
         
         // Subscribers
         odom_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
@@ -46,9 +61,74 @@ public:
             std::bind(&FollowTheCarrot::path_callback, this, std::placeholders::_1));
 
         timer_ = this->create_wall_timer(50ms, std::bind(&FollowTheCarrot::timer_callback, this));
+        
+        // 상태 발행 타이머 추가
+        state_timer_ = this->create_wall_timer(100ms, std::bind(&FollowTheCarrot::publish_state, this));
+        
+        RCLCPP_INFO(this->get_logger(), "robot state system initialized");
     }
 
 private:
+    // 현재 로봇 상태를 발행하는 함수
+    void publish_state()
+    {
+        std_msgs::msg::Int32 state_msg;
+        state_msg.data = static_cast<int32_t>(current_state_);
+        state_pub_->publish(state_msg);
+    }
+    
+    // 로봇 상태를 업데이트하는 함수
+    void update_state()
+    {
+        // 필요한 데이터가 없으면 초기화 상태
+        if (!is_odom_ || !is_path_ || !is_status_) {
+            current_state_ = INITIALIZING;
+            return;
+        }
+        
+        // 경로가 비어있으면 정지 상태
+        if (path_msg_.poses.size() <= 1) {
+            current_state_ = STOPPED;
+            return;
+        }
+        
+        double robot_pose_x = odom_msg_.pose.pose.position.x;
+        double robot_pose_y = odom_msg_.pose.pose.position.y;
+        
+        // 목적지까지의 거리 계산 (경로의 마지막 포인트)
+        geometry_msgs::msg::Point destination = path_msg_.poses.back().pose.position;
+        double dist_to_destination = std::sqrt(
+            std::pow(destination.x - robot_pose_x, 2) + 
+            std::pow(destination.y - robot_pose_y, 2));
+        
+        // 목적지에 도착했는지 확인
+        if (dist_to_destination <= destination_radius_) {
+            current_state_ = ARRIVED;
+            RCLCPP_INFO(this->get_logger(), "arrived! distance: %f", dist_to_destination);
+            return;
+        }
+        
+        // 로봇이 움직이고 있는지 확인 (선속도가 거의 0인지)
+        double current_speed = std::sqrt(
+            std::pow(status_msg_.twist.linear.x, 2) + 
+            std::pow(status_msg_.twist.linear.y, 2));
+        
+        const double speed_threshold = 0.01;  // 로봇이 움직이고 있다고 판단하는 최소 속도
+        const int stop_threshold = 20;        // 정지 상태로 전환하기 위한 연속 정지 카운트
+        
+        if (current_speed < speed_threshold) {
+            stop_count_++;
+            if (stop_count_ >= stop_threshold && current_state_ != ARRIVED) {
+                current_state_ = STOPPED;
+            }
+        } else {
+            stop_count_ = 0;
+            if (current_state_ != ARRIVED) {
+                current_state_ = DRIVING;
+            }
+        }
+    }
+
     void timer_callback()
     {
         if (is_status_ && is_odom_ && is_path_) {
@@ -57,6 +137,26 @@ private:
                 
                 double robot_pose_x = odom_msg_.pose.pose.position.x;
                 double robot_pose_y = odom_msg_.pose.pose.position.y;
+                
+                // 목적지까지의 거리 계산
+                geometry_msgs::msg::Point destination = path_msg_.poses.back().pose.position;
+                double dist_to_destination = std::sqrt(
+                    std::pow(destination.x - robot_pose_x, 2) + 
+                    std::pow(destination.y - robot_pose_y, 2));
+                
+                // 목적지에 도착했는지 확인
+                if (dist_to_destination <= destination_radius_) {
+                    // 목적지 도착 시 정지
+                    cmd_msg_.linear.x = 0.0;
+                    cmd_msg_.angular.z = 0.0;
+                    cmd_pub_->publish(cmd_msg_);
+                    
+                    if (current_state_ != ARRIVED) {
+                        current_state_ = ARRIVED;
+                        RCLCPP_INFO(this->get_logger(), "arrived!");
+                    }
+                    return;
+                }
                 
                 // 현재 위치와 경로 시작점 사이의 거리 계산
                 double lateral_error = std::sqrt(
@@ -67,7 +167,7 @@ private:
                 lfd_ = (status_msg_.twist.linear.x + lateral_error) * 0.7;  // 계수를 1.0에서 0.7로 감소
                 lfd_ = std::max(min_lfd_, std::min(lfd_, max_lfd_));
                 
-                RCLCPP_INFO(this->get_logger(), "LFD: %f", lfd_);
+                RCLCPP_INFO(this->get_logger(), "LFD: %f, distance to destination: %f", lfd_, dist_to_destination);
 
                 // Look Forward Point 찾기
                 double min_dis = std::numeric_limits<double>::infinity();
@@ -171,9 +271,10 @@ private:
                     }
                     
                     RCLCPP_INFO(this->get_logger(), 
-                        "theta: %f, speed: %f", 
+                        "theta: %f, speed: %f, state: %d", 
                         theta, 
-                        cmd_msg_.linear.x);
+                        cmd_msg_.linear.x,
+                        current_state_);
                 }
             } else {
                 RCLCPP_INFO(this->get_logger(), "No path points available");
@@ -182,6 +283,9 @@ private:
             }
 
             cmd_pub_->publish(cmd_msg_);
+            
+            // 로봇 상태 업데이트
+            update_state();
         }
     }
 
@@ -216,14 +320,16 @@ private:
 
     // Publishers
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_pub_;
+    rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr state_pub_;
     
     // Subscribers
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
     rclcpp::Subscription<ssafy_msgs::msg::TurtlebotStatus>::SharedPtr status_sub_;
     rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
     
-    // Timer
+    // Timers
     rclcpp::TimerBase::SharedPtr timer_;
+    rclcpp::TimerBase::SharedPtr state_timer_;
     
     // Messages
     nav_msgs::msg::Odometry odom_msg_;
@@ -241,6 +347,11 @@ private:
     double lfd_;
     double min_lfd_;
     double max_lfd_;
+    
+    // 로봇 상태 관련 멤버
+    RobotState current_state_;
+    int stop_count_;
+    double destination_radius_;
 };
 
 int main(int argc, char * argv[])
