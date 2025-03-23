@@ -5,5 +5,6 @@ from db.database import Base
 from models.robot import Robot
 from models.incident import Incident
 from models.position import RobotPosition
+from models.mission import FirefightingMission
 
 # 이 파일은 모든 모델을 참조하기 위해 사용됨

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from api.v1.endpoints import robots, incidents, auth
+from api.v1.endpoints import robots, incidents, auth, missions
 
 from core.security import get_current_user
 
@@ -31,6 +31,13 @@ secured_router.include_router(
     incidents.router,
     prefix="/incidents",
     tags=["incidents"]
+)
+
+# 화재 진압 미션 관련 API 라우터 추가
+secured_router.include_router(
+    missions.router,
+    prefix="/missions",
+    tags=["missions"]
 )
 
 # 보호된 라우터를 메인 라우터에 포함
