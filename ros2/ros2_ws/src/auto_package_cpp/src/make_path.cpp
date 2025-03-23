@@ -6,6 +6,13 @@
 #include <string>
 #include <cmath>
 #include <memory>
+#include "auto_package_cpp/file_path.hpp"
+
+// 전역 변수 선언 및 초기화
+std::string PATH_FILE = auto_package_cpp::create_file_path("auto_package_cpp", "path/test_save.txt");
+
+// 파일 경로를 상수로 정의
+// const std::string PATH_FILE = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\test_save.txt)";
 
 using namespace std::chrono_literals;
 
@@ -68,8 +75,8 @@ public:
         subscription_ = this->create_subscription<nav_msgs::msg::Odometry>(
             "/odom", 10, std::bind(&MakePath::listener_callback, this, std::placeholders::_1));
         
-        // 파일 열기 (절대 경로 사용)
-        file_.open(R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\test_save.txt)", std::ios::out);
+        // 파일 열기 (경로 상수 사용)
+        file_.open(PATH_FILE, std::ios::out);
         
         // Path 메시지 초기화
         path_msg_.header.frame_id = "map";

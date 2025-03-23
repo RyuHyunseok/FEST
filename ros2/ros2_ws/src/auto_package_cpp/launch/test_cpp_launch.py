@@ -11,11 +11,11 @@ def generate_launch_description():
             output='screen'
         ),
         
-        # 2. Path Publisher 노드
+        # 2. global_path_publisher 노드
         Node(
             package='auto_package_cpp',
-            node_executable='path_publisher',
-            node_name='path_publisher',
+            node_executable='global_path_publisher',
+            node_name='global_path_publisher',
             output='screen'
         ),
         
@@ -35,19 +35,19 @@ def generate_launch_description():
         #     output='screen'
         # ),
 
-        # 4. lattice planner 노드
+        # 4. local_path_planner 노드
         # Node(
         #     package='auto_package_cpp',
-        #     node_executable='lattice_planner',
-        #     node_name='lattice_planner',
+        #     node_executable='local_path_planner',
+        #     node_name='local_path_planner',
         #     output='screen'
         # ),
 
-        # 5. map visualizer 노드
+        # 5. global_cost_map_generator 노드
         Node(
             package='auto_package_cpp',
-            node_executable='map_visualizer',
-            node_name='map_visualizer',
+            node_executable='global_cost_map_generator',
+            node_name='global_cost_map_generator',
             output='screen'
         ),
     ]) 

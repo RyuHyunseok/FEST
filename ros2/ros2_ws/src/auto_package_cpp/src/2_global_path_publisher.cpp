@@ -11,6 +11,13 @@
 #include <cstdint>
 #include <iso646.h> // Alternative operator spellings
 #include <sstream>  // istringstream 을 위해 필요
+#include "auto_package_cpp/file_path.hpp"
+
+// 전역 변수 선언 및 초기화
+std::string PATH_FILE = auto_package_cpp::create_file_path("auto_package_cpp", "path/test.txt");
+
+// 파일 경로를 상수로 정의
+// const std::string PATH_FILE = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\test.txt)";
 
 using namespace std::chrono_literals;  // 20ms 사용을 위해 필요
 
@@ -30,7 +37,7 @@ public:
     global_path_msg_.header.frame_id = "map";
     
     // Read path from file
-    std::ifstream file(R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\test.txt)");
+    std::ifstream file(PATH_FILE);
     if (not file.is_open()) {
       RCLCPP_ERROR(this->get_logger(), "Failed to open path file");
       return;
