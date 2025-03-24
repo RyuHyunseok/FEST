@@ -11,7 +11,7 @@ def generate_launch_description():
             output='screen'
         ),
         
-        # 2. global_cost_map_generator 노드
+        # 1. global_cost_map_generator 노드
         Node(
             package='auto_package_cpp',
             node_executable='global_cost_map_generator',
@@ -19,7 +19,7 @@ def generate_launch_description():
             output='screen'
         ),
         
-        # 3. local_cost_map_generator 노드
+        # 1. local_cost_map_generator 노드
         Node(
             package='auto_package_cpp',
             node_executable='local_cost_map_generator',
@@ -27,7 +27,7 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # 4. global_dijkstra_path 노드
+        # 2. global_dijkstra_path 노드
         Node(
             package='auto_package_cpp',
             node_executable='global_dijkstra_path',
@@ -35,7 +35,7 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # 5. local_dijkstra_path 노드
+        # 2. local_dijkstra_path 노드
         Node(
             package='auto_package_cpp',
             node_executable='local_dijkstra_path',
@@ -43,11 +43,19 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # 6. follow_the_carrot 노드
+        # 3. follow_the_carrot 노드
         Node(
             package='auto_package_cpp',
             node_executable='follow_the_carrot',
             node_name='follow_the_carrot',
             output='screen'
         ),
+
+        # goal_publisher 노드
+        # Node(
+        #     package='auto_package_cpp',
+        #     node_executable='goal_publisher',
+        #     node_name='goal_publisher',
+        #     output='screen'
+        # ),
     ]) 
