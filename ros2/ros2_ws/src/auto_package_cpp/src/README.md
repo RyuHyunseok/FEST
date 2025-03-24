@@ -59,7 +59,7 @@
 (판단) global 코스트 맵에서 현재 위치에서 목표점까지의 최단 경로를 global 경로로 발행하는 노드
 
 - **구독 토픽**:
-  - `/map` (`nav_msgs/msg/OccupancyGrid`): 글로벌 지도 정보
+  - `/cost_map` (`nav_msgs/msg/OccupancyGrid`): 글로벌 지도 정보
   - `/goal_point` (`geometry_msgs/msg/Point`): 목표 지점 정보
   - `/odom` (`nav_msgs/msg/Odometry`): 로봇의 위치 및 속도 정보
 

@@ -13,11 +13,6 @@
 
 const double M_PI = std::acos(-1);
 
-// M_PI 정의 추가
-// #ifndef M_PI
-// #define M_PI 3.14159265358979323846
-// #endif
-
 using namespace std::chrono_literals;
 
 // 로봇 상태를 나타내기 위한 열거형
@@ -108,6 +103,13 @@ private:
             return;
         }
         
+        // 목적지가 바뀌어서 더 이상 도착 상태가 아닌 경우
+        if (current_state_ == ARRIVED && dist_to_destination > destination_radius_) {
+            RCLCPP_INFO(this->get_logger(), "No longer at destination, distance: %f", dist_to_destination);
+            current_state_ = DRIVING;
+            return;
+        }
+        
         // 로봇이 움직이고 있는지 확인 (선속도가 거의 0인지)
         double current_speed = std::sqrt(
             std::pow(status_msg_.twist.linear.x, 2) + 
@@ -123,7 +125,8 @@ private:
             }
         } else {
             stop_count_ = 0;
-            if (current_state_ != ARRIVED) {
+            // ARRIVED 상태더라도 로봇이 움직이고 있다면 DRIVING 상태로 변경
+            if (current_state_ != DRIVING) {
                 current_state_ = DRIVING;
             }
         }
@@ -155,126 +158,126 @@ private:
                         current_state_ = ARRIVED;
                         RCLCPP_INFO(this->get_logger(), "arrived!");
                     }
-                    return;
                 }
-                
-                // 현재 위치와 경로 시작점 사이의 거리 계산
-                double lateral_error = std::sqrt(
-                    std::pow(path_msg_.poses[0].pose.position.x - robot_pose_x, 2) + 
-                    std::pow(path_msg_.poses[0].pose.position.y - robot_pose_y, 2));
-                
-                // Look Forward Distance 동적 조정
-                lfd_ = (status_msg_.twist.linear.x + lateral_error) * 0.7;  // 계수를 1.0에서 0.7로 감소
-                lfd_ = std::max(min_lfd_, std::min(lfd_, max_lfd_));
-                
-                RCLCPP_INFO(this->get_logger(), "LFD: %f, distance to destination: %f", lfd_, dist_to_destination);
+                else {
+                    // 현재 위치와 경로 시작점 사이의 거리 계산
+                    double lateral_error = std::sqrt(
+                        std::pow(path_msg_.poses[0].pose.position.x - robot_pose_x, 2) + 
+                        std::pow(path_msg_.poses[0].pose.position.y - robot_pose_y, 2));
+                    
+                    // Look Forward Distance 동적 조정
+                    lfd_ = (status_msg_.twist.linear.x + lateral_error) * 0.7;  // 계수를 1.0에서 0.7로 감소
+                    lfd_ = std::max(min_lfd_, std::min(lfd_, max_lfd_));
+                    
+                    RCLCPP_INFO(this->get_logger(), "LFD: %f, distance to destination: %f", lfd_, dist_to_destination);
 
-                // Look Forward Point 찾기
-                double min_dis = std::numeric_limits<double>::infinity();
-                geometry_msgs::msg::Point forward_point;
-                geometry_msgs::msg::Point current_point;
-                
-                // 로봇과 가장 가까운 경로점 찾기
-                size_t closest_idx = 0;
-                double min_path_dis = std::numeric_limits<double>::infinity();
-                
-                for (size_t i = 0; i < path_msg_.poses.size(); i++) {
-                    double dx = path_msg_.poses[i].pose.position.x - robot_pose_x;
-                    double dy = path_msg_.poses[i].pose.position.y - robot_pose_y;
-                    double dist = std::sqrt(dx*dx + dy*dy);
+                    // Look Forward Point 찾기
+                    double min_dis = std::numeric_limits<double>::infinity();
+                    geometry_msgs::msg::Point forward_point;
+                    geometry_msgs::msg::Point current_point;
                     
-                    if (dist < min_path_dis) {
-                        min_path_dis = dist;
-                        closest_idx = i;
-                    }
-                }
-                
-                // 가장 가까운 점에서부터 LFD만큼 떨어진 점 찾기
-                double current_distance = 0.0;
-                is_look_forward_point = false;
-                
-                for (size_t i = closest_idx; i < path_msg_.poses.size()-1; i++) {
-                    current_point = path_msg_.poses[i].pose.position;
-                    geometry_msgs::msg::Point next_point = path_msg_.poses[i+1].pose.position;
+                    // 로봇과 가장 가까운 경로점 찾기
+                    size_t closest_idx = 0;
+                    double min_path_dis = std::numeric_limits<double>::infinity();
                     
-                    double segment_dx = next_point.x - current_point.x;
-                    double segment_dy = next_point.y - current_point.y;
-                    double segment_length = std::sqrt(segment_dx*segment_dx + segment_dy*segment_dy);
-                    
-                    // 세그먼트를 따라 이동하면서 LFD 거리에 도달하는지 확인
-                    if (current_distance + segment_length > lfd_) {
-                        // 세그먼트 내에서 LFD 지점 계산
-                        double ratio = (lfd_ - current_distance) / segment_length;
-                        forward_point.x = current_point.x + ratio * segment_dx;
-                        forward_point.y = current_point.y + ratio * segment_dy;
-                        is_look_forward_point = true;
-                        break;
-                    }
-                    
-                    current_distance += segment_length;
-                }
-                
-                // 목표점이 발견되지 않았고 경로가 남아있다면 마지막 경로점 사용
-                if (!is_look_forward_point && path_msg_.poses.size() > 0) {
-                    forward_point = path_msg_.poses.back().pose.position;
-                    is_look_forward_point = true;
-                }
-
-                if (is_look_forward_point) {
-                    // 전역 좌표계의 전방 포인트를 로봇 좌표계로 변환
-                    std::vector<double> global_forward_point = {forward_point.x, forward_point.y, 1.0};
-                    
-                    double cos_yaw = std::cos(robot_yaw_);
-                    double sin_yaw = std::sin(robot_yaw_);
-                    
-                    // 역변환 행렬 계산 (전역 -> 로컬)
-                    std::vector<std::vector<double>> det_trans_matrix = {
-                        {cos_yaw, sin_yaw, -robot_pose_x * cos_yaw - robot_pose_y * sin_yaw},
-                        {-sin_yaw, cos_yaw, robot_pose_x * sin_yaw - robot_pose_y * cos_yaw},
-                        {0, 0, 1}
-                    };
-                    
-                    // 로봇 좌표계에서의 전방 포인트 계산
-                    std::vector<double> local_forward_point(3);
-                    for (int i = 0; i < 3; i++) {
-                        local_forward_point[i] = 0;
-                        for (int j = 0; j < 3; j++) {
-                            local_forward_point[i] += det_trans_matrix[i][j] * global_forward_point[j];
+                    for (size_t i = 0; i < path_msg_.poses.size(); i++) {
+                        double dx = path_msg_.poses[i].pose.position.x - robot_pose_x;
+                        double dy = path_msg_.poses[i].pose.position.y - robot_pose_y;
+                        double dist = std::sqrt(dx*dx + dy*dy);
+                        
+                        if (dist < min_path_dis) {
+                            min_path_dis = dist;
+                            closest_idx = i;
                         }
                     }
                     
-                    // 조향각 계산
-                    double theta = -std::atan2(local_forward_point[1], local_forward_point[0]);
+                    // 가장 가까운 점에서부터 LFD만큼 떨어진 점 찾기
+                    double current_distance = 0.0;
+                    is_look_forward_point = false;
                     
-                    // 회전각에 따른 속도 조절
-                    double abs_theta = std::abs(theta);
-                    double base_speed = 0.8;  // 기본 속도를 1.0에서 0.8로 감소
-                    double min_speed = 0.1;   // 최소 속도
-                    
-                    // 회전각이 클수록 속도 감소 - 더 민감하게 속도 줄임
-                    double speed_factor = 1.0 - (abs_theta / M_PI) * 0.8;  // 감속 강도를 0.6에서 0.8로 증가
-                    speed_factor = std::max(0.15, speed_factor);  // 최소 속도를 0.2에서 0.15로 감소
-                    double smooth_factor = 0.5;  // 속도 변화를 더 부드럽게 (0.7에서 0.5로 조정)
-                    static double prev_speed = 0.0;
-                    cmd_msg_.linear.x = (base_speed * speed_factor * smooth_factor) + 
-                                        (prev_speed * (1.0 - smooth_factor));
-                    prev_speed = cmd_msg_.linear.x;
-                    
-                    // 각속도 게인을 조정하여 급격한 회전 방지
-                    double angular_gain = 1.0;  // 1.5에서 1.0으로 감소
-                    cmd_msg_.angular.z = theta * angular_gain;
-
-                    // 급격한 회전 시 더 일찍 멈추고 회전만 수행
-                    double angular_threshold = M_PI / 2;  // 임계값 설정 (3π/4에서 π/2로 줄임)
-                    if (abs_theta > angular_threshold) {
-                        cmd_msg_.linear.x = 0.0;  // 선속도 0으로 설정
+                    for (size_t i = closest_idx; i < path_msg_.poses.size()-1; i++) {
+                        current_point = path_msg_.poses[i].pose.position;
+                        geometry_msgs::msg::Point next_point = path_msg_.poses[i+1].pose.position;
+                        
+                        double segment_dx = next_point.x - current_point.x;
+                        double segment_dy = next_point.y - current_point.y;
+                        double segment_length = std::sqrt(segment_dx*segment_dx + segment_dy*segment_dy);
+                        
+                        // 세그먼트를 따라 이동하면서 LFD 거리에 도달하는지 확인
+                        if (current_distance + segment_length > lfd_) {
+                            // 세그먼트 내에서 LFD 지점 계산
+                            double ratio = (lfd_ - current_distance) / segment_length;
+                            forward_point.x = current_point.x + ratio * segment_dx;
+                            forward_point.y = current_point.y + ratio * segment_dy;
+                            is_look_forward_point = true;
+                            break;
+                        }
+                        
+                        current_distance += segment_length;
                     }
                     
-                    RCLCPP_INFO(this->get_logger(), 
-                        "theta: %f, speed: %f, state: %d", 
-                        theta, 
-                        cmd_msg_.linear.x,
-                        current_state_);
+                    // 목표점이 발견되지 않았고 경로가 남아있다면 마지막 경로점 사용
+                    if (!is_look_forward_point && path_msg_.poses.size() > 0) {
+                        forward_point = path_msg_.poses.back().pose.position;
+                        is_look_forward_point = true;
+                    }
+
+                    if (is_look_forward_point) {
+                        // 전역 좌표계의 전방 포인트를 로봇 좌표계로 변환
+                        std::vector<double> global_forward_point = {forward_point.x, forward_point.y, 1.0};
+                        
+                        double cos_yaw = std::cos(robot_yaw_);
+                        double sin_yaw = std::sin(robot_yaw_);
+                        
+                        // 역변환 행렬 계산 (전역 -> 로컬)
+                        std::vector<std::vector<double>> det_trans_matrix = {
+                            {cos_yaw, sin_yaw, -robot_pose_x * cos_yaw - robot_pose_y * sin_yaw},
+                            {-sin_yaw, cos_yaw, robot_pose_x * sin_yaw - robot_pose_y * cos_yaw},
+                            {0, 0, 1}
+                        };
+                        
+                        // 로봇 좌표계에서의 전방 포인트 계산
+                        std::vector<double> local_forward_point(3);
+                        for (int i = 0; i < 3; i++) {
+                            local_forward_point[i] = 0;
+                            for (int j = 0; j < 3; j++) {
+                                local_forward_point[i] += det_trans_matrix[i][j] * global_forward_point[j];
+                            }
+                        }
+                        
+                        // 조향각 계산
+                        double theta = -std::atan2(local_forward_point[1], local_forward_point[0]);
+                        
+                        // 회전각에 따른 속도 조절
+                        double abs_theta = std::abs(theta);
+                        double base_speed = 0.8;  // 기본 속도를 1.0에서 0.8로 감소
+                        double min_speed = 0.1;   // 최소 속도
+                        
+                        // 회전각이 클수록 속도 감소 - 더 민감하게 속도 줄임
+                        double speed_factor = 1.0 - (abs_theta / M_PI) * 0.8;  // 감속 강도를 0.6에서 0.8로 증가
+                        speed_factor = std::max(0.15, speed_factor);  // 최소 속도를 0.2에서 0.15로 감소
+                        double smooth_factor = 0.5;  // 속도 변화를 더 부드럽게 (0.7에서 0.5로 조정)
+                        static double prev_speed = 0.0;
+                        cmd_msg_.linear.x = (base_speed * speed_factor * smooth_factor) + 
+                                            (prev_speed * (1.0 - smooth_factor));
+                        prev_speed = cmd_msg_.linear.x;
+                        
+                        // 각속도 게인을 조정하여 급격한 회전 방지
+                        double angular_gain = 1.0;  // 1.5에서 1.0으로 감소
+                        cmd_msg_.angular.z = theta * angular_gain;
+
+                        // 급격한 회전 시 더 일찍 멈추고 회전만 수행
+                        double angular_threshold = M_PI / 2;  // 임계값 설정 (3π/4에서 π/2로 줄임)
+                        if (abs_theta > angular_threshold) {
+                            cmd_msg_.linear.x = 0.0;  // 선속도 0으로 설정
+                        }
+                        
+                        RCLCPP_INFO(this->get_logger(), 
+                            "theta: %f, speed: %f, state: %d", 
+                            theta, 
+                            cmd_msg_.linear.x,
+                            current_state_);
+                    }
                 }
             } else {
                 RCLCPP_INFO(this->get_logger(), "No path points available");
@@ -309,7 +312,32 @@ private:
     void path_callback(const nav_msgs::msg::Path::SharedPtr msg)
     {
         is_path_ = true;
+        
+        // 경로가 바뀌었는지 확인
+        bool path_changed = false;
+        if (path_msg_.poses.size() != msg->poses.size()) {
+            path_changed = true;
+        } else if (!path_msg_.poses.empty() && !msg->poses.empty()) {
+            // 마지막 포인트(목적지)가 바뀌었는지 확인
+            auto& old_dest = path_msg_.poses.back().pose.position;
+            auto& new_dest = msg->poses.back().pose.position;
+            
+            double dest_diff = std::sqrt(
+                std::pow(old_dest.x - new_dest.x, 2) + 
+                std::pow(old_dest.y - new_dest.y, 2));
+                
+            if (dest_diff > 0.1) { // 10cm 이상 차이가 나면 경로 변경으로 판단
+                path_changed = true;
+            }
+        }
+        
         path_msg_ = *msg;
+        
+        // 경로가 바뀌었고, 로봇이 ARRIVED 상태라면 상태 리셋
+        if (path_changed && current_state_ == ARRIVED) {
+            current_state_ = DRIVING;
+            RCLCPP_INFO(this->get_logger(), "New path detected, reset from ARRIVED to DRIVING state");
+        }
     }
 
     void status_callback(const ssafy_msgs::msg::TurtlebotStatus::SharedPtr msg)
