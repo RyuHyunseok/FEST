@@ -49,18 +49,27 @@ class MQTTCommandSubscriber(Node):
             command = json.loads(payload)
             command_type = command.get("type")
             target = command.get("target")
+            mission_id = command.get("mission_id")  # 미션 ID 추출
+            incident_id = command.get("incident_id")  # 화재 ID 추출
             
             # 명령 타입에 따른 처리
             if command_type == "move_to":
                 self.get_logger().info(f"[COMMAND] Moving to location: X={target['x']}, Y={target['y']}")
+                if mission_id:
+                    self.get_logger().info(f"[MISSION] Mission ID: {mission_id}")
+                    # 실제 구현에서는 여기서 미션 ID를 저장하고, 현장 도착 시 미션 상태 업데이트
+                    # 이 예제에서는 로봇 코드에 mission_id를 저장하는 로직은 포함하지 않음
             elif command_type == "extinguish":
                 self.get_logger().info(f"[COMMAND] Starting fire extinguishing at: {target}")
+                if mission_id:
+                    self.get_logger().info(f"[MISSION] Mission ID: {mission_id}")
             else:
                 self.get_logger().info(f"[COMMAND] Unknown command type: {command_type}")
                 
         except Exception as e:
             self.get_logger().error(f"Error processing message: {e}")
-    
+
+
     def check_connection(self):
         """정기적으로 MQTT 연결 상태 확인"""
         if self.mqtt_client.is_connected():

@@ -51,13 +51,31 @@
         
         <p v-else class="text-center my-4">현재 활성화된 화재가 없습니다.</p>
       </v-card-text>
+
+    <!-- 3D 맵 추가 -->
+    <v-card class="mx-auto my-4">
+      <v-card-title>
+        <span>3D 맵 뷰</span>
+      </v-card-title>
+      <v-card-text>
+        <MapViewer :robots="robots"/>
+      </v-card-text>
+    </v-card>
+
+
     </v-card>
   </v-container>
 </template>
 
 <script>
+
+import MapViewer from '../components/MapViewer.vue';
+
 export default {
   name: 'RobotMonitoring',
+  components: {
+    MapViewer
+  },
   data() {
     return {
       robotsWs: null,

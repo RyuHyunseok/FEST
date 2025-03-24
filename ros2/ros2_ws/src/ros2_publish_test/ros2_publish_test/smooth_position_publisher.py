@@ -33,7 +33,7 @@ class SmoothPositionPublisher(Node):
         self.one_shot_timers = {}
 
         # 타이머 설정
-        self.position_timer = self.create_timer(0.5, self.publish_position)  # 0.5초마다 위치 발행
+        # self.position_timer = self.create_timer(0.5, self.publish_position)  # 0.5초마다 위치 발행
         self.status_timer = self.create_timer(5.0, self.publish_status)  # 5초마다 상태 발행
         
         # 테스트용 화재 발생 시뮬레이션 타이머 (30초마다)
@@ -123,7 +123,7 @@ class SmoothPositionPublisher(Node):
         timer_key = f"start_firefighting_{fire_id}"
         self.one_shot_timers[timer_key] = self.create_timer(5.0, lambda: self.start_firefighting_callback(fire_id, timer_key))
     
-    def start_firefighting_callback(self, fire_id, timer_key):
+    def start_firefighting_callback(self, fire_id, timer_key, mission_id=None):
         """화재 진압 작업 시작 + 타이머 취소"""
         # 일회성 타이머 취소
         if timer_key in self.one_shot_timers:
@@ -134,11 +134,21 @@ class SmoothPositionPublisher(Node):
         self.status = "fighting_fire"
         self.get_logger().info(f'Starting to fight fire: {fire_id}')
         
+        # 미션 상태 업데이트 (현장 도착)
+        if mission_id:
+            mission_update = {
+                "status": "in_progress",
+                "arrived_at": int(self.get_clock().now().nanoseconds / 1000000)  # 밀리초로 변환
+            }
+            self.mqtt_client.publish(f"missions/{mission_id}/update", json.dumps(mission_update))
+            self.get_logger().info(f'Mission {mission_id} status updated: arrived at scene')
+
+
         # 10초 후에 화재 진압 완료 (일회성 타이머 대신 일반 타이머 + 콜백에서 취소)
         finish_timer_key = f"finish_firefighting_{fire_id}"
         self.one_shot_timers[finish_timer_key] = self.create_timer(10.0, lambda: self.finish_firefighting_callback(fire_id, finish_timer_key))
     
-    def finish_firefighting_callback(self, fire_id, timer_key):
+    def finish_firefighting_callback(self, fire_id, timer_key, mission_id=None):
         """화재 진압 완료 + 타이머 취소"""
         # 일회성 타이머 취소
         if timer_key in self.one_shot_timers:
@@ -149,15 +159,27 @@ class SmoothPositionPublisher(Node):
         self.status = "idle"
         self.get_logger().info(f'Finished fighting fire: {fire_id}')
         
+        # 현재 시간 (밀리초)
+        current_time = int(self.get_clock().now().nanoseconds / 1000000)
+        
         # 화재 상태 업데이트 메시지 생성
         update_data = {
             "incident_id": fire_id,
             "status": "extinguished",
-            "extinguished_at": int(self.get_clock().now().nanoseconds / 1000000)  # 밀리초로 변환
+            "extinguished_at": current_time
         }
         
         # MQTT로 화재 상태 업데이트 메시지 발행
         self.mqtt_client.publish(f"incidents/{fire_id}/status", json.dumps(update_data))
+        
+        # 미션 상태 업데이트 (완료)
+        if mission_id:
+            mission_update = {
+                "status": "completed",
+                "completed_at": current_time
+            }
+            self.mqtt_client.publish(f"missions/{mission_id}/update", json.dumps(mission_update))
+            self.get_logger().info(f'Mission {mission_id} status updated: completed')
 
 def main(args=None):
     rclpy.init(args=args)
