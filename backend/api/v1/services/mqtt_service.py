@@ -12,6 +12,8 @@ from sqlalchemy import func
 from geoalchemy2.functions import ST_MakePoint
 import datetime
 
+from models.mission import FirefightingMission
+
 
 # Redis 연결 설정
 redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
@@ -78,24 +80,6 @@ def on_message(client, userdata, msg):
             # 데이터베이스에 화재 정보 저장
             create_new_incident(incident_id, message)
 
-            # 일단 모든 로봇에게 명령
-            # 나중에 최단 거리 로봇에게 명령하도록 구현
-            robot_keys = redis_client.keys("robot:*:position")
-            for key in robot_keys:
-                parts = key.split(':')
-                if len(parts) >= 3:
-                    robot_id = parts[1]
-
-                    # 로봇 메시지 생성
-                    command = {
-                        'type': 'move_to',
-                        'target': message['location']
-                    }
-
-                    # MQTT로 로봇에게 명령 topic publish
-                    _mqtt_client.publish(f'robots/{robot_id}/command', json.dumps(command))
-                    print(f'화재 발생: 로봇 {robot_id}에게 화재 위치로 이동하라 명령')
-
 
         # 화재 상태 업데이트 처리 (topic: incidents/{incident_id}/status)
         elif topic.startswith("incidents/") and topic.endswith("/status"):
@@ -113,6 +97,16 @@ def on_message(client, userdata, msg):
                 
                 # 데이터베이스에 상태 업데이트 저장
                 update_incident_status(incident_id, message)
+
+        # 미션 상태 업데이트 처리 (topic: missions/{mission_id}/update)
+        elif topic.startswith("missions/") and topic.endswith("/update"):
+            # 토픽에서 미션 ID 추출 (형식: missions/{mission_id}/update)
+            parts = topic.split('/')
+            if len(parts) >= 3:
+                mission_id = parts[1]
+                
+                # 데이터베이스에 미션 상태 업데이트
+                update_mission_status(mission_id, message)
 
     except Exception as e:
         print(f"Error processing message: {e}")
@@ -157,7 +151,7 @@ def save_position_to_db(robot_id, position_data):
         db.close()
 
 def create_new_incident(incident_id, incident_data):
-    """새로운 화재 사고를 데이터베이스에 저장"""
+    """새로운 화재 사고를 데이터베이스에 저장하고, 로봇에게 미션 할당"""
     try:
         db = SessionLocal()
         
@@ -178,6 +172,45 @@ def create_new_incident(incident_id, incident_data):
         db.add(incident)
         db.commit()
         
+        # 가용 로봇 찾기 (가장 가까운 로봇)
+        # 실제 구현에서는 좀 더 복잡한 알고리즘을 사용할 수 있음
+        # 여기서는 단순히 위치 정보가 있는 모든 로봇에게 미션 부여
+        robot_keys = redis_client.keys("robot:*:position")
+        
+        for key in robot_keys:
+            parts = key.split(':')
+            if len(parts) >= 3:
+                robot_id = parts[1]
+                
+                # 로봇 위치 정보 가져오기
+                position_data = redis_client.get(key)
+                if position_data:
+                    # 미션 ID 생성
+                    mission_id = f"mission_{uuid.uuid4().hex[:8]}"
+                    
+                    # 미션 생성
+                    from models.mission import FirefightingMission
+                    mission = FirefightingMission(
+                        mission_id=mission_id,
+                        robot_id=robot_id,
+                        incident_id=incident_id,
+                        status="assigned"
+                    )
+                    db.add(mission)
+                    
+                    # 로봇 메시지 생성
+                    command = {
+                        'type': 'move_to',
+                        'target': location,
+                        'mission_id': mission_id,  # 미션 ID 포함
+                        'incident_id': incident_id  # 화재 ID 포함
+                    }
+                    
+                    # MQTT로 로봇에게 명령 publish
+                    _mqtt_client.publish(f'robots/{robot_id}/command', json.dumps(command))
+                    print(f'화재 발생: 로봇 {robot_id}에게 미션 {mission_id} 할당')
+        
+        db.commit()
         print(f"새로운 화재 db 저장완료: {incident}")
         return True
         
@@ -225,7 +258,58 @@ def update_incident_status(incident_id, status_data):
     finally:
         db.close()
 
-
+def update_mission_status(mission_id, status_data):
+    """화재 진압 미션 상태를 업데이트"""
+    try:
+        db = SessionLocal()
+        
+        # 미션 모델 임포트
+        from models.mission import FirefightingMission
+        
+        # 기존 미션 조회
+        mission = db.query(FirefightingMission).filter(FirefightingMission.mission_id == mission_id).first()
+        
+        if not mission:
+            print(f"Cannot update mission status: Mission {mission_id} not found")
+            return False
+        
+        # 상태 업데이트
+        if "status" in status_data:
+            mission.status = status_data["status"]
+        
+        # arrived_at 처리
+        if "arrived_at" in status_data:
+            # 타임스탬프를 datetime으로 변환
+            try:
+                arrived_ts = status_data["arrived_at"]
+                # 밀리초 타임스탬프라면 초 단위로 변환
+                if arrived_ts > 1000000000000:  # 밀리초 타임스탬프 체크
+                    arrived_ts = arrived_ts / 1000
+                mission.arrived_at = datetime.datetime.fromtimestamp(arrived_ts)
+            except Exception as e:
+                print(f"Error converting arrived_at: {e}")
+        
+        # completed_at 처리
+        if "completed_at" in status_data:
+            # 타임스탬프를 datetime으로 변환
+            try:
+                completed_ts = status_data["completed_at"]
+                # 밀리초 타임스탬프라면 초 단위로 변환
+                if completed_ts > 1000000000000:  # 밀리초 타임스탬프 체크
+                    completed_ts = completed_ts / 1000
+                mission.completed_at = datetime.datetime.fromtimestamp(completed_ts)
+            except Exception as e:
+                print(f"Error converting completed_at: {e}")
+        
+        db.commit()
+        print(f"미션 상태 업데이트: {mission}")
+        return True
+        
+    except Exception as e:
+        print(f"Error updating mission in database: {e}")
+        return False
+    finally:
+        db.close()
 
 # MQTT 클라이언트 참조
 _mqtt_client = None
@@ -241,6 +325,8 @@ def start_mqtt_listener():
     _mqtt_client.subscribe("robots/+/status")    # 모든 로봇 상태 정보
     _mqtt_client.subscribe("incidents/new")       # 새 화재 발생 정보
     _mqtt_client.subscribe("incidents/+/status") # 모든 화재 상태 정보
+    _mqtt_client.subscribe("mission/+/update")   # 모든 미션 상태 업데이트
+
 
     _mqtt_client.loop_start()  # 비동기 구독 시작
     print("MQTT 리스너가 시작되었습니다.")

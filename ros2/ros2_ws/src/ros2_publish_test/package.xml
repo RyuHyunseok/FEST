@@ -9,6 +9,7 @@
 
   <depend>rclpy</depend>      <!-- ROS2 Python 클라이언트 라이브러리 -->
   <depend>std_msgs</depend>   <!-- ROS2 메시지 유형 (예: String, Int32 등) -->
+  <depend>geometry_msgs</depend>  <!-- 로봇 위치, 방향 등을 위한 메시지 유형 -->
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>
