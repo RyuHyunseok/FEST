@@ -121,18 +121,18 @@ export default {
     },
     createRobotMesh() {
       // 로봇을 표현할 기하학적 형태 생성 - 크기 증가
-      const geometry = new THREE.CylinderGeometry(0.5, 0.5, 0.6, 16); // 크기와 세그먼트 수 증가
+      const geometry = new THREE.CylinderGeometry(1.5, 1.5, 1, 16); // 크기와 세그먼트 수 증가
       const material = new THREE.MeshLambertMaterial({ color: 0xff0000 }); // 빨간색
       const mesh = new THREE.Mesh(geometry, material);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       
       // 메시 위에 화살표 추가하여 방향 표시
-      const arrowGeometry = new THREE.ConeGeometry(0.3, 0.6, 8);
-      const arrowMaterial = new THREE.MeshLambertMaterial({ color: 0xffff00 }); // 노란색 화살표
+      const arrowGeometry = new THREE.ConeGeometry(1, 1, 10);
+      const arrowMaterial = new THREE.MeshLambertMaterial({ color: 0xff0000 }); // 노란색 화살표
       const arrow = new THREE.Mesh(arrowGeometry, arrowMaterial);
-      arrow.position.set(0, 0, 0.6); // 메시 앞쪽에 위치
-      arrow.rotation.x = -Math.PI / 2; // 앞쪽을 가리키도록 회전
+      arrow.position.set(0, 0, 3); // 메시 앞쪽에 위치
+      arrow.rotation.x = Math.PI / 2; // 앞쪽을 가리키도록 회전
       
       // 로봇 메시 그룹 생성
       const group = new THREE.Group();
@@ -162,7 +162,6 @@ export default {
           // 예: Unity의 (x, y) -> Three.js의 (x, 0.3, -y) 매핑 또는 적절히 조정
           const robotMesh = this.robotMeshes[robotId];
           
-          // 좌표 매핑 방식 조정 - 여러 옵션을 시도해보세요
           // 옵션 1: 그대로 매핑 (x, y) -> (x, 높이, y)
           // robotMesh.position.set(x, 0.3, y);
           
