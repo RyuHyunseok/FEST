@@ -140,7 +140,7 @@ class SmoothPositionPublisher(Node):
                 "status": "in_progress",
                 "arrived_at": int(self.get_clock().now().nanoseconds / 1000000)  # 밀리초로 변환
             }
-            self.mqtt_client.publish(f"missions/{mission_id}/update", json.dumps(mission_update))
+            self.mqtt_client.publish(f"mission/{mission_id}/update", json.dumps(mission_update))
             self.get_logger().info(f'Mission {mission_id} status updated: arrived at scene')
 
 
