@@ -13,7 +13,7 @@
         <!-- 메인 콘텐츠 영역 -->
         <v-container fluid class="pa-4">
           <!-- 연결 상태 알림 -->
-          <v-row v-if="!isAllConnected">
+          <!-- <v-row v-if="!isAllConnected">
             <v-col cols="12">
               <AlertBox
                 type="warning"
@@ -33,7 +33,7 @@
                 </v-btn>
               </AlertBox>
             </v-col>
-          </v-row>
+          </v-row> -->
           
           <!-- 상태 요약 카드 -->
           <v-row>
@@ -429,7 +429,7 @@ import StatusBadge from '../components/common/StatusBadge.vue';
     },
     data() {
       return {
-        drawer: true,
+        drawer: false,
         isLoading: false,
         isLoadingRobots: false,
         isSendingCommand: false,
@@ -693,6 +693,7 @@ import StatusBadge from '../components/common/StatusBadge.vue';
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    padding-top: 64px; /* Topbar 높이만큼 padding 추가 */
   }
   
   .dashboard-card {
