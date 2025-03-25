@@ -180,7 +180,7 @@ CREATE TABLE incidents (
     location GEOMETRY(POINT, 4326),
     detected_at TIMESTAMP,
     extinguished_at TIMESTAMP,
-    status VARCHAR(20) DEFAULT 'active'
+    status VARCHAR(20) DEFAULT 'active' -- 'active', 'extinguished' # 이건 화재의 현재 상태
 );
 
 -- 로봇 위치 이력 테이블
@@ -197,7 +197,7 @@ CREATE TABLE firefighting_missions (
     mission_id VARCHAR(50) PRIMARY KEY,
     robot_id VARCHAR(50) REFERENCES robots(robot_id),
     incident_id VARCHAR(50) REFERENCES incidents(incident_id),
-    status VARCHAR(20) DEFAULT 'assigned',  -- assigned, in_progress, completed, failed
+    status VARCHAR(20) DEFAULT 'assigned',  -- assigned, in_progress, completed, failed # 이건 로봇의 임무 수행 상태
     assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     arrived_at TIMESTAMP NULL,
     completed_at TIMESTAMP NULL
@@ -258,6 +258,15 @@ incidents/{incident_id}/status # 화재 상태 업데이트
   "incident_id": "fire_123",
   "location": {"x": 25.5, "y": 30.2},
   "detected_at": 1646406000000
+}
+```
+
+### 화재 상태 메시지 (incidents/{incident_id}/status)
+```json
+{
+    "incident_id": "fire_id",
+    "status": "extinguished",
+    "extinguished_at": "current_time"
 }
 ```
 

@@ -13,11 +13,16 @@ export default {
     robots: {
       type: Object,
       default: () => ({})
+    },
+    incidents: {
+    type: Object,
+    default: () => ({})
     }
   },
   data() {
     return {
-      robotMeshes: {} // 로봇 ID를 키로 가지는 메시 객체
+      robotMeshes: {}, // 로봇 ID를 키로 가지는 메시 객체
+      incidentMeshes: {} // 화재 ID를 키로 가지는 메시 객체 추가
     };
   },
   watch: {
@@ -25,6 +30,14 @@ export default {
       deep: true,
       handler(newRobots) {
         this.updateRobotPositions(newRobots);
+      }
+    },
+    incidents: {
+    deep: true,
+    immediate: true,
+    handler(newIncidents, oldIncidents) {
+      console.log('MapViewer: incidents 변경 감지', newIncidents);
+      this.updateIncidents(newIncidents);
       }
     }
   },
@@ -183,7 +196,7 @@ export default {
           robotMesh.rotation.y = rotationY;
           
           // 콘솔에 디버깅 정보 출력
-          console.log(`Robot ${robotId} position: Unity(${x}, ${y}) -> Three.js(${robotMesh.position.x}, ${robotMesh.position.y}, ${robotMesh.position.z})`);
+          // console.log(`Robot ${robotId} position: Unity(${x}, ${y}) -> Three.js(${robotMesh.position.x}, ${robotMesh.position.y}, ${robotMesh.position.z})`);
         }
       });
     },
@@ -194,6 +207,29 @@ export default {
         this.controls.update();
       }
       
+  // 화재 애니메이션 효과 (불꽃이 흔들리는 효과)
+  if (this.incidentMeshes) {
+    Object.values(this.incidentMeshes).forEach(item => {
+      if (item.mesh) {
+        // 불꽃 흔들림 효과
+        const time = Date.now() * 0.001; // 시간 기반 애니메이션
+        const flame = item.mesh.children[1]; // 큰 불꽃
+        const smallFlame = item.mesh.children[2]; // 작은 불꽃
+        
+        if (flame && smallFlame) {
+          flame.position.x = Math.sin(time * 2) * 0.2;
+          flame.position.z = Math.cos(time * 3) * 0.2;
+          flame.scale.y = 0.9 + Math.sin(time * 5) * 0.1;
+          
+          smallFlame.position.x = Math.sin(time * 3) * 0.3;
+          smallFlame.position.z = Math.cos(time * 2) * 0.3;
+          smallFlame.scale.y = 0.8 + Math.sin(time * 6) * 0.2;
+        }
+      }
+    });
+  }
+
+
       this.renderer.render(this.scene, this.camera);
     },
     onWindowResize() {
@@ -205,7 +241,154 @@ export default {
         this.$refs.mapContainer.clientWidth,
         this.$refs.mapContainer.clientHeight
       );
+    },
+
+    // 화재 관련 메서드
+
+    createIncidentMesh(incidentId, location) {
+  // 화재 효과 그룹
+  const fireGroup = new THREE.Group();
+  
+  // 기본 원형 표시 (바닥에 표시)
+  const baseGeometry = new THREE.CircleGeometry(3, 32);
+  const baseMaterial = new THREE.MeshBasicMaterial({
+    color: 0xff3300,
+    transparent: true,
+    opacity: 0.7,
+    side: THREE.DoubleSide
+  });
+  const baseCircle = new THREE.Mesh(baseGeometry, baseMaterial);
+  baseCircle.rotation.x = Math.PI / 2; // 바닥에 평행하게
+  baseCircle.position.y = 0.1; // 바닥 위에 약간 띄우기
+  fireGroup.add(baseCircle);
+  
+  // 불꽃 효과 (원뿔)
+  const flameGeometry = new THREE.ConeGeometry(2, 5, 32);
+  const flameMaterial = new THREE.MeshBasicMaterial({
+    color: 0xff5500,
+    transparent: true,
+    opacity: 0.8
+  });
+  const flame = new THREE.Mesh(flameGeometry, flameMaterial);
+  flame.position.y = 2.5; // 중심 높이
+  fireGroup.add(flame);
+  
+  // 작은 불꽃 (더 작은 원뿔)
+  const smallFlameGeometry = new THREE.ConeGeometry(1, 3, 32);
+  const smallFlameMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffcc00,
+    transparent: true,
+    opacity: 0.9
+  });
+  const smallFlame = new THREE.Mesh(smallFlameGeometry, smallFlameMaterial);
+  smallFlame.position.y = 4; // 중심 높이 위
+  fireGroup.add(smallFlame);
+  
+  // 좌표 설정 (Unity 좌표계를 Three.js 좌표계로 변환)
+  fireGroup.position.set(location.y, 0, location.x);
+  
+  // 씬에 추가
+  this.scene.add(fireGroup);
+  
+  // 맵에 저장
+  this.incidentMeshes[incidentId] = {
+    mesh: fireGroup
+  };
+  
+  return fireGroup;
+},
+
+updateIncidents(incidents) {
+  if (!this.scene) return;
+  
+  console.log('updateIncidents 호출됨:', incidents);
+  
+  // 현재 화재 ID 목록
+  const currentIncidentIds = Object.keys(incidents);
+  console.log('현재 화재 ID들:', currentIncidentIds);
+  console.log('현재 맵에 있는 화재 ID들:', Object.keys(this.incidentMeshes));
+  
+  // 먼저 extinguished 상태의 화재 제거
+  currentIncidentIds.forEach(incidentId => {
+    const incidentData = incidents[incidentId];
+    console.log(`화재 ID ${incidentId} 상태:`, incidentData.status);
+
+    // extinguished 상태면 화재 제거
+    if (incidentData.status === 'extinguished') {
+      if (this.incidentMeshes[incidentId]) {
+        console.log(`화재 ID ${incidentId} 제거 시도`);
+        try {
+          // 화재 메시 참조 저장
+          const meshToRemove = this.incidentMeshes[incidentId].mesh;
+          
+          // 씬에서 제거
+          if (meshToRemove) {
+            this.scene.remove(meshToRemove);
+            console.log(`화재 ID ${incidentId} 씬에서 제거 성공`);
+            
+            // 메모리 해제
+            if (meshToRemove.geometry) meshToRemove.geometry.dispose();
+            if (meshToRemove.material) {
+              if (Array.isArray(meshToRemove.material)) {
+                meshToRemove.material.forEach(m => m.dispose());
+              } else {
+                meshToRemove.material.dispose();
+              }
+            }
+            
+            // 자식 객체 제거
+            while (meshToRemove.children.length > 0) {
+              const child = meshToRemove.children[0];
+              meshToRemove.remove(child);
+              if (child.geometry) child.geometry.dispose();
+              if (child.material) {
+                if (Array.isArray(child.material)) {
+                  child.material.forEach(m => m.dispose());
+                } else {
+                  child.material.dispose();
+                }
+              }
+            }
+          }
+          
+          // 객체에서 제거
+          delete this.incidentMeshes[incidentId];
+          console.log(`화재 ID ${incidentId} 완전히 제거됨`);
+        } catch (error) {
+          console.error(`화재 ID ${incidentId} 제거 중 오류:`, error);
+        }
+      }
     }
+  });
+  
+  // 남은 화재 처리 (active 상태)
+  currentIncidentIds.forEach(incidentId => {
+    const incidentData = incidents[incidentId];
+    
+    // extinguished 상태는 이미 위에서 처리했으므로 건너뜀
+    if (incidentData.status === 'extinguished') return;
+    
+    // 위치 데이터가 없으면 건너뜀
+    if (!incidentData.location) return;
+    
+    // 화재가 맵에 없으면 새로 생성
+    if (!this.incidentMeshes[incidentId]) {
+      console.log(`새 화재 ID ${incidentId} 생성`);
+      this.createIncidentMesh(incidentId, incidentData.location);
+    } else {
+      // 위치만 업데이트
+      console.log(`화재 ID ${incidentId} 위치 업데이트`);
+      const incidentMesh = this.incidentMeshes[incidentId].mesh;
+      incidentMesh.position.set(incidentData.location.y, 0, incidentData.location.x);
+    }
+  });
+  
+  console.log('업데이트 후 맵에 남은 화재 ID들:', Object.keys(this.incidentMeshes));
+}
+
+
+
+
   }
 };
 </script>
