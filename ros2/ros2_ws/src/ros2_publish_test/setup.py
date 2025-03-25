@@ -22,7 +22,8 @@ setup(
         'console_scripts': [
             'smooth_position_publisher = ros2_publish_test.smooth_position_publisher:main',
             'mqtt_command_subscriber = ros2_publish_test.mqtt_command_subscriber:main',
-            'ros2_mqtt_bridge = ros2_publish_test.ros2_mqtt_bridge:main'
+            'ros2_mqtt_bridge = ros2_publish_test.ros2_mqtt_bridge:main',
+            'mqtt_ros2_bridge = ros2_publish_test.mqtt_ros2_bridge:main',
         ],
     },
 )

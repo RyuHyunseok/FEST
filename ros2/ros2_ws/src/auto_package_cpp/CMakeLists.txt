@@ -162,6 +162,26 @@ ament_target_dependencies(global_dijkstra_path
   "visualization_msgs"
 )
 
+# Windows 환경에서 mosquitto 라이브러리 경로 설정
+if(WIN32)
+  set(MOSQUITTO_DIR "C:/Program Files/mosquitto/devel")
+  
+  # mosquitto 헤더 파일과 라이브러리 경로 추가
+  target_include_directories(global_dijkstra_path PRIVATE 
+    "${MOSQUITTO_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"  # nlohmann-json 헤더 파일 경로
+  )
+  
+  target_link_directories(global_dijkstra_path PRIVATE 
+    "${MOSQUITTO_DIR}"
+  )
+  
+  # mosquitto 라이브러리 링크
+  target_link_libraries(global_dijkstra_path
+    mosquitto
+  )
+endif()
+
 # local_cost_map_generator 노드 추가
 add_executable(local_cost_map_generator src/1_local_cost_map_generator.cpp)
 ament_target_dependencies(local_cost_map_generator
@@ -190,6 +210,16 @@ ament_target_dependencies(goal_publisher
 )
 target_link_libraries(goal_publisher file_path)
 
+# auto_goal_manager 노드 추가
+add_executable(auto_goal_manager src/auto_goal_publisher.cpp)
+ament_target_dependencies(auto_goal_manager
+  "rclcpp"
+  "geometry_msgs"
+  "std_msgs"
+  "ament_index_cpp"
+)
+target_link_libraries(auto_goal_manager file_path)
+
 # 설치 대상 추가
 install(TARGETS 
   file_path
@@ -205,6 +235,7 @@ install(TARGETS
   local_cost_map_generator
   local_dijkstra_path
   goal_publisher
+  auto_goal_manager
   EXPORT export_${PROJECT_NAME}
   DESTINATION lib/${PROJECT_NAME})
 

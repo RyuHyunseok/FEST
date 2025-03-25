@@ -20,6 +20,10 @@
   <depend>visualization_msgs</depend>
   <depend>Eigen3</depend>
   <depend>ament_index_cpp</depend>
+
+    <!-- MQTT 라이브러리 -->
+  <depend>libmosquitto-dev</depend>
+  <depend>nlohmann-json-dev</depend>
   
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
