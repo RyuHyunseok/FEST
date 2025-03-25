@@ -84,6 +84,16 @@ def on_message(client, userdata, msg):
         # 화재 상태 업데이트 처리 (topic: incidents/{incident_id}/status)
         elif topic.startswith("incidents/") and topic.endswith("/status"):
             # 토픽에서 화재 ID 추출 (형식: incidents/{incident_id}/status)
+
+            # 토픽 메시지 정보
+            """
+            update_data = {
+                'incident_id': fire_id,
+                'status': 'extinguished',
+                'extinguished_at': current_time
+                }
+            """
+
             parts = topic.split('/')
             if len(parts) >= 3:
                 incident_id = parts[1]
