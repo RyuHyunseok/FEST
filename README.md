@@ -247,7 +247,7 @@ incidents/{incident_id}/status # 화재 상태 업데이트
 ### 로봇 명령 메시지 (robots/{robot_id}/command)
 ```json
 {
-  "type": "move_to",  // move_to, extinguish
+//   "type": "move_to",  // move_to, extinguish
   "target": {"x": 25.5, "y": 30.2}
 }
 ```
@@ -274,7 +274,7 @@ incidents/{incident_id}/status # 화재 상태 업데이트
 - `GET /api/v1/incidents` - 모든 화재 사고 목록
 - `GET /api/v1/incidents/{incident_id}` - 특정 화재 사고 상세 정보
 - `GET /api/v1/incidents/active` - 현재 진행 중인 화재 목록
-- `POST /api/v1/incidents` - 새 화재 생성 (테스트용)
+<!-- - `POST /api/v1/incidents` - 새 화재 생성 (테스트용) -->
 
 ## WebSocket 엔드포인트
 - `/ws/robots` - 모든 로봇 상태 업데이트 수신
