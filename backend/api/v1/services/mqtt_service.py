@@ -19,7 +19,7 @@ from models.mission import FirefightingMission
 redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 # 위치 데이터 샘플링을 위한 설정
-POSITION_SAMPLE_INTERVAL = 10  # 10초마다 위치 데이터 저장
+POSITION_SAMPLE_INTERVAL = 1  # 1초마다 위치 데이터 저장
 last_position_save = {}        # 로봇별 마지막 저장 시간 추적용 딕셔너리
 
 # 위치 데이터를 샘플링할지 결정하는 함수

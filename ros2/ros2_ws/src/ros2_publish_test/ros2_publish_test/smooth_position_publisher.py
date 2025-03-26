@@ -36,38 +36,15 @@ class SmoothPositionPublisher(Node):
         # self.position_timer = self.create_timer(0.5, self.publish_position)  # 0.5초마다 위치 발행
         self.status_timer = self.create_timer(5.0, self.publish_status)  # 5초마다 상태 발행
         
-        # 테스트용 화재 발생 시뮬레이션 타이머 (30초마다)
-        # self.fire_timer = self.create_timer(30.0, self.simulate_fire)
+        # 테스트용 화재 발생 시뮬레이션을 위한 일회성 타이머 (10초 후 한 번만 발생)
+        self.fire_timer = self.create_timer(10.0, self.fire_once)
 
-        # 테스트용 화재 발생 시뮬레이션 타이머 (10초 후 한 번만 발생)
-        self.create_timer(10.0, self.simulate_fire)
+    def fire_once(self):
+            # 타이머 취소 (한 번만 실행하기 위해)
+            self.fire_timer.cancel()
+            # 화재 시뮬레이션 실행
+            self.simulate_fire()
 
-    def publish_position(self):
-        # 현재 방향(각도)을 라디안으로 변환
-        radian = math.radians(self.orientation)
-
-        # 방향을 따라 조금씩 이동
-        self.x += self.speed * math.cos(radian)
-        self.y += self.speed * math.sin(radian)
-
-        # 이동 중 약간 방향 변경 (5도 이내로 랜덤 회전)
-        self.orientation += random.uniform(-5, 5)
-        self.orientation = self.orientation % 360  # 0~360도 유지
-
-        # MQTT 메시지 생성
-        position_data = {
-            "x": round(self.x, 2),
-            "y": round(self.y, 2),
-            "orientation": round(self.orientation, 2)
-        }
-
-        # MQTT로 위치 메시지 발행
-        self.mqtt_client.publish(self.position_topic, json.dumps(position_data))
-        self.get_logger().info(f'Publishing position to MQTT: {position_data}')
-        
-        # 이동 중이면 배터리 소모 시뮬레이션
-        if self.status == "moving" or self.status == "fighting_fire":
-            self.battery = max(0, self.battery - 0.1)  # 배터리 소모 시뮬레이션
 
     def publish_status(self):
         # MQTT 메시지 생성
@@ -144,9 +121,9 @@ class SmoothPositionPublisher(Node):
             self.get_logger().info(f'Mission {mission_id} status updated: arrived at scene')
 
 
-        # 10초 후에 화재 진압 완료 (일회성 타이머 대신 일반 타이머 + 콜백에서 취소)
+        # 20초 후에 화재 진압 완료 (일회성 타이머 대신 일반 타이머 + 콜백에서 취소)
         finish_timer_key = f"finish_firefighting_{fire_id}"
-        self.one_shot_timers[finish_timer_key] = self.create_timer(10.0, lambda: self.finish_firefighting_callback(fire_id, finish_timer_key))
+        self.one_shot_timers[finish_timer_key] = self.create_timer(20, lambda: self.finish_firefighting_callback(fire_id, finish_timer_key))
     
     def finish_firefighting_callback(self, fire_id, timer_key, mission_id=None):
         """화재 진압 완료 + 타이머 취소"""
