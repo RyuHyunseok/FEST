@@ -16,11 +16,7 @@
 // using namespace 추가
 using namespace std::chrono_literals;
 
-const double M_PI = std::acos(-1);
-
-// #ifndef M_PI
-// #define M_PI 3.14159265358979323846
-// #endif
+const double M_PI = std::acos(-1);  // 파이 값
 
 // 다익스트라 알고리즘을 위한 노드 정의
 struct DijkstraNode {
@@ -49,7 +45,7 @@ public:
                         has_cost_map_(false),
                         has_odom_(false),
                         lookahead_distance_(2.0),  // 2m 전방 거리 고려
-                        collision_threshold_(70)   // 비용 맵에서 70 이상은 충돌로 간주
+                        collision_threshold_(65)   // 비용 맵에서 70 이상은 충돌로 간주
     {
         // 지역 경로 발행자
         local_path_pub_ = create_publisher<nav_msgs::msg::Path>("local_path", 10);

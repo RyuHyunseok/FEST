@@ -326,7 +326,7 @@ private:
         int cost = map_.data[index];
         
         // 완전한 장애물(100)만 통과 불가능으로 처리
-        if (cost >= 90) return -1;
+        if (cost >= 65) return -1;
         
         // cost가 낮을수록(0) 낮은 패널티
         // cost가 높을수록(100에 가까울수록) 높은 패널티

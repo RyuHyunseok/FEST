@@ -15,7 +15,11 @@
 #include "auto_package_cpp/file_path.hpp"
 
 // 전역 변수 선언 및 초기화
-std::string MAP_FILE = auto_package_cpp::create_file_path("auto_package_cpp", "path/map.pgm");
+std::string MAP_FILE = auto_package_cpp::create_file_path("auto_package_cpp", "path/map_save.pgm");
+const double MAP_WIDTH = 20.0;  // 맵의 너비 (미터)
+const double MAP_HEIGHT = 20.0; // 맵의 높이 (미터)
+const double MAP_CENTER_X = 0.0;  // 맵의 중심 X 좌표 (미터)
+const double MAP_CENTER_Y = 0.0;  // 맵의 중심 Y 좌표 (미터)
 
 // 파일 경로를 상수로 정의
 // const std::string MAP_FILE = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\map.pgm)";
@@ -80,10 +84,15 @@ public:
         
         double pose_x = (pose(0) - map_center_.first + (map_size_.first * map_resolution_) / 2) / map_resolution_;
         double pose_y = (pose(1) - map_center_.second + (map_size_.second * map_resolution_) / 2) / map_resolution_;
+        // 맵핑을 위한 좌표 변환 (맵의 중심점 이동 고려)
+        // double pose_x = (pose(0) + (map_size_.first * map_resolution_) / 2) / map_resolution_;
+        // double pose_y = (pose(1) + (map_size_.second * map_resolution_) / 2) / map_resolution_;
         
         for (int i = 0; i < laser_global.cols(); ++i) {
             double laser_x = (laser_global(0, i) - map_center_.first + (map_size_.first * map_resolution_) / 2) / map_resolution_;
             double laser_y = (laser_global(1, i) - map_center_.second + (map_size_.second * map_resolution_) / 2) / map_resolution_;
+            // double laser_x = (laser_global(0, i) + (map_size_.first * map_resolution_) / 2) / map_resolution_;
+            // double laser_y = (laser_global(1, i) + (map_size_.second * map_resolution_) / 2) / map_resolution_;
             
             Point p1(static_cast<int>(pose_x), static_cast<int>(pose_y));
             Point p2(static_cast<int>(laser_x), static_cast<int>(laser_y));
@@ -197,8 +206,8 @@ public:
         params.MAP_RESOLUTION = 0.05;
         params.OCCUPANCY_UP = 0.1;
         params.OCCUPANCY_DOWN = 0.01;
-        params.MAP_CENTER = {0.0, 0.0};
-        params.MAP_SIZE = {20.0, 20.0};
+        params.MAP_CENTER = {MAP_CENTER_X, MAP_CENTER_Y};  // 전역 변수 사용
+        params.MAP_SIZE = {MAP_WIDTH, MAP_HEIGHT};
         params.MAP_FILENAME = MAP_FILE;
         params.MAPVIS_RESIZE_SCALE = 2.0;
         
@@ -218,8 +227,8 @@ public:
         meta.resolution = params.MAP_RESOLUTION;
         meta.width = static_cast<int>(params.MAP_SIZE.first / params.MAP_RESOLUTION);
         meta.height = static_cast<int>(params.MAP_SIZE.second / params.MAP_RESOLUTION);
-        meta.origin.position.x = -params.MAP_SIZE.first / 2.0;
-        meta.origin.position.y = -params.MAP_SIZE.second / 2.0;
+        meta.origin.position.x = MAP_CENTER_X - params.MAP_SIZE.first / 2.0;
+        meta.origin.position.y = MAP_CENTER_Y - params.MAP_SIZE.second / 2.0;
         
         map_msg_.info = meta;
         map_msg_.header.frame_id = "map";

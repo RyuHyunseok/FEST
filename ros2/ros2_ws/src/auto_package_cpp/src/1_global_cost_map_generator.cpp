@@ -11,6 +11,12 @@
 std::string MAP_FILE = auto_package_cpp::create_file_path("auto_package_cpp", "path/map.pgm");
 std::string COST_MAP_FILE = auto_package_cpp::create_file_path("auto_package_cpp", "path/cost_map.pgm");
 
+// mapping.cpp와 동일한 맵 파라미터 사용
+const double MAP_WIDTH = 20.0;  // 맵의 너비 (미터)
+const double MAP_HEIGHT = 20.0; // 맵의 높이 (미터)
+const double MAP_CENTER_X = 0.0;  // 맵의 중심 X 좌표 (미터)
+const double MAP_CENTER_Y = 0.0;  // 맵의 중심 Y 좌표 (미터)
+
 // 파일 경로를 상수로 정의
 // const std::string MAP_FILE = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\map.pgm)";
 // const std::string COST_MAP_FILE = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\cost_map.pgm)";
@@ -30,8 +36,10 @@ public:
         map_meta_.resolution = 0.05;  // 5cm per pixel
         map_meta_.width = 400;        // 20m / 0.05m = 400 pixels
         map_meta_.height = 400;       // 20m / 0.05m = 400 pixels
-        map_meta_.origin.position.x = -10.0;  // -20m/2
-        map_meta_.origin.position.y = -10.0;  // -20m/2
+        // map_meta_.width = static_cast<int>(MAP_WIDTH / map_meta_.resolution);
+        // map_meta_.height = static_cast<int>(MAP_HEIGHT / map_meta_.resolution);
+        map_meta_.origin.position.x = MAP_CENTER_X - MAP_WIDTH / 2.0;
+        map_meta_.origin.position.y = MAP_CENTER_Y - MAP_HEIGHT / 2.0;
         
         // 맵 메시지 설정
         map_msg_.info = map_meta_;

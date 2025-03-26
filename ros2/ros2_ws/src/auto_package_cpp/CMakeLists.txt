@@ -32,7 +32,7 @@ find_package(ssafy_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
-find_package(builtin_interfaces REQUIRED)
+# find_package(builtin_interfaces REQUIRED)  # 사용되지 않는 패키지
 find_package(sensor_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -43,7 +43,7 @@ include_directories(
 )
 
 # file_path 라이브러리 생성
-add_library(file_path src/file_path.cpp)
+add_library(file_path src/utils/file_path.cpp)
 target_include_directories(file_path PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
@@ -180,6 +180,14 @@ if(WIN32)
       "C:/Program Files (x86)/mosquitto/devel"
       "C:/mosquitto/devel"
       "${CMAKE_CURRENT_SOURCE_DIR}/mosquitto/devel"
+      "C:/Program Files/mosquitto"
+      "C:/Program Files (x86)/mosquitto"
+      "C:/mosquitto"
+      "C:/opt/mosquitto"
+      "C:/opt/mosquitto/devel"
+      "C:/msys64/mingw64/include"
+      "C:/msys64/mingw64/lib"
+      "C:/msys64/mingw64"
     )
 
     foreach(PATH ${POSSIBLE_PATHS})
