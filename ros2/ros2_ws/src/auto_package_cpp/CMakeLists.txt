@@ -113,11 +113,12 @@ ament_target_dependencies(local_path_planner
 )
 
 # mapping_node 추가
-if(WIN32)
-  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "C:/dev/ros2-windows/share/eigen3_cmake_module/cmake")
-  find_package(Eigen3 REQUIRED)
-  set(EIGEN3_INCLUDE_DIR "C:/dev/ros2-windows/include/eigen3")
-endif()
+# if(WIN32)
+#   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "C:/dev/ros2-windows/share/eigen3_cmake_module/cmake")
+#   find_package(Eigen3 REQUIRED)
+#   set(EIGEN3_INCLUDE_DIR "C:/dev/ros2-windows/include/eigen3")
+# endif()
+find_package(Eigen3 REQUIRED)
 
 add_executable(mapping_node src/mapping.cpp)
 target_include_directories(mapping_node PRIVATE
@@ -164,7 +165,30 @@ ament_target_dependencies(global_dijkstra_path
 
 # Windows 환경에서 mosquitto 라이브러리 경로 설정
 if(WIN32)
-  set(MOSQUITTO_DIR "C:/Program Files/mosquitto/devel")
+  # set(MOSQUITTO_DIR "C:/Program Files/mosquitto/devel")
+  if(DEFINED ENV{MOSQUITTO_DIR})
+    # 환경 변수에서 devel 경로 찾기
+    if(EXISTS "$ENV{MOSQUITTO_DIR}/devel")
+      set(MOSQUITTO_DIR "$ENV{MOSQUITTO_DIR}/devel")
+    else()
+      set(MOSQUITTO_DIR $ENV{MOSQUITTO_DIR})
+    endif()
+  else()
+    # 기본 설치 경로들 검색
+    set(POSSIBLE_PATHS
+      "C:/Program Files/mosquitto/devel"
+      "C:/Program Files (x86)/mosquitto/devel"
+      "C:/mosquitto/devel"
+      "${CMAKE_CURRENT_SOURCE_DIR}/mosquitto/devel"
+    )
+
+    foreach(PATH ${POSSIBLE_PATHS})
+      if(EXISTS "${PATH}/mosquitto.h")
+        set(MOSQUITTO_DIR ${PATH})
+        break()
+      endif()
+    endforeach()
+  endif()
   
   # mosquitto 헤더 파일과 라이브러리 경로 추가
   target_include_directories(global_dijkstra_path PRIVATE 
