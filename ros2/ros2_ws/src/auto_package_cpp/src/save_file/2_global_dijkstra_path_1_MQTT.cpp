@@ -5,15 +5,16 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "auto_package_cpp/mqtt_handler.hpp"
 #include <queue>
 #include <vector>
 #include <cmath>
 #include <algorithm>
 #include <memory>
 #include <unordered_map>
+#include <mosquitto.h>
+#include <nlohmann/json.hpp>
 
-const double M_PI = std::acos(-1);
+const double M_PI = std::acos(-1);  // 파이 값
 
 struct DijkstraNode {
     int x, y;
@@ -36,29 +37,48 @@ struct NodeHash {
 
 class DijkstraPlanner : public rclcpp::Node {
 public:
-    DijkstraPlanner() : Node("dijkstra_planner"), has_map_(false), has_robot_pose_(false), has_goal_(false) {
+    DijkstraPlanner() : Node("dijkstra_planner"), has_map_(false), has_robot_pose_(false), has_goal_(false), mosq(nullptr) {
+        // MQTT 초기화
+        int rc = mosquitto_lib_init();
+        if (rc != MOSQ_ERR_SUCCESS) {
+            RCLCPP_ERROR(this->get_logger(), "Failed to initialize MQTT library");
+            return;
+        }
+
+        mosq = mosquitto_new(NULL, true, this);
+        if (!mosq) {
+            RCLCPP_ERROR(this->get_logger(), "Failed to create MQTT client");
+            mosquitto_lib_cleanup();
+            return;
+        }
+
+        // MQTT 콜백 설정
+        mosquitto_connect_callback_set(mosq, mqtt_connect_callback);
+        mosquitto_message_callback_set(mosq, mqtt_message_callback);
+
+        // MQTT 브로커 연결
+        rc = mosquitto_connect(mosq, "localhost", 1883, 60);
+        if (rc != MOSQ_ERR_SUCCESS) {
+            RCLCPP_ERROR(this->get_logger(), "Failed to connect to MQTT broker");
+            mosquitto_destroy(mosq);
+            mosquitto_lib_cleanup();
+            return;
+        }
+
+        // MQTT 루프 시작
+        rc = mosquitto_loop_start(mosq);
+        if (rc != MOSQ_ERR_SUCCESS) {
+            RCLCPP_ERROR(this->get_logger(), "Failed to start MQTT loop");
+            mosquitto_disconnect(mosq);
+            mosquitto_destroy(mosq);
+            mosquitto_lib_cleanup();
+            return;
+        }
+
         // 구독자 생성
         map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
             "/cost_map", 1, std::bind(&DijkstraPlanner::map_callback, this, std::placeholders::_1));
         
-        // MQTT 핸들러 초기화 및 설정
-        mqtt_handler_ = std::make_unique<MqttHandler>("localhost", 1883);
-        if (mqtt_handler_->connect()) {
-            mqtt_handler_->set_goal_callback([this](double x, double y) {
-                geometry_msgs::msg::Point goal_point;
-                goal_point.x = x;
-                goal_point.y = y;
-                goal_callback(std::make_shared<geometry_msgs::msg::Point>(goal_point));
-            });
-            RCLCPP_INFO(get_logger(), "MQTT handler initialized successfully");
-        } else {
-            // MQTT 연결 실패 시 ROS2 토픽 사용
-            goal_sub_ = create_subscription<geometry_msgs::msg::Point>(
-                "/goal_point", 10,
-                std::bind(&DijkstraPlanner::goal_callback, this, std::placeholders::_1));
-            RCLCPP_WARN(get_logger(), "MQTT connection failed, using ROS2 topic /goal_point");
-        }
-
         // 로봇의 실제 위치를 받기 위한 구독자 추가
         odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
             "odom", 10, std::bind(&DijkstraPlanner::odom_callback, this, std::placeholders::_1));
@@ -70,14 +90,22 @@ public:
         RCLCPP_INFO(get_logger(), "Dijkstra Planner initialized");
     }
 
+    ~DijkstraPlanner() {
+        if (mosq) {
+            mosquitto_loop_stop(mosq, true);
+            mosquitto_disconnect(mosq);
+            mosquitto_destroy(mosq);
+            mosq = nullptr;
+        }
+        mosquitto_lib_cleanup();
+    }
+
 private:
     // 클래스 멤버 변수 선언
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
-    rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr goal_sub_;  // ROS2 토픽 구독자
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
-    std::unique_ptr<MqttHandler> mqtt_handler_;
     nav_msgs::msg::OccupancyGrid map_;
     bool has_map_;
     bool has_robot_pose_;
@@ -95,18 +123,77 @@ private:
     int goal_x_;
     int goal_y_;
 
+    struct mosquitto *mosq;
+    
+    // MQTT 콜백 함수들
+    static void mqtt_connect_callback(struct mosquitto *mosq, void *obj, int result)
+    {
+        if (!result)
+        {
+            mosquitto_subscribe(mosq, NULL, "incidents/new", 0);
+        }
+    }
+
+    static void mqtt_message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message) {
+        if (!message || !message->payload) {
+            return;
+        }
+
+        DijkstraPlanner* planner = static_cast<DijkstraPlanner*>(obj);
+        if (!planner) {
+            return;
+        }
+
+        try {
+            if (std::string(message->topic) == "incidents/new") {
+                auto json_data = nlohmann::json::parse(static_cast<char*>(message->payload));
+                
+                if (!json_data.contains("location") || 
+                    !json_data["location"].contains("x") || 
+                    !json_data["location"].contains("y")) {
+                    RCLCPP_ERROR(planner->get_logger(), "Invalid message format");
+                    return;
+                }
+
+                geometry_msgs::msg::Point point;
+                point.x = json_data["location"]["x"].get<double>();
+                point.y = json_data["location"]["y"].get<double>();
+                point.z = 0.0;
+
+                planner->goal_callback(std::make_shared<geometry_msgs::msg::Point>(point));
+            }
+        }
+        catch (const std::exception& e) {
+            RCLCPP_ERROR(planner->get_logger(), "Error processing MQTT message: %s", e.what());
+        }
+    }
+
     void goal_callback(const geometry_msgs::msg::Point::SharedPtr msg) {
+        if (!msg) {
+            RCLCPP_ERROR(get_logger(), "Received null goal message");
+            return;
+        }
+
+        if (!has_map_) {
+            RCLCPP_ERROR(get_logger(), "Map not received yet");
+            return;
+        }
+
         // 목표점을 맵 좌표계로 변환
         goal_x_ = static_cast<int>((msg->x - map_.info.origin.position.x) / map_.info.resolution);
         goal_y_ = static_cast<int>((msg->y - map_.info.origin.position.y) / map_.info.resolution);
-        has_goal_ = true;
+        
         RCLCPP_INFO(get_logger(), "Received new goal point: map coordinates (%d, %d)", goal_x_, goal_y_);
         
-        // 새로운 목표점이 설정되면 경로 계획 실행
+        // 목표점 설정 후 has_goal_ 플래그를 true로 설정
+        has_goal_ = true;
+        
         plan_current_path();
     }
 
     void plan_current_path() {
+        RCLCPP_DEBUG(get_logger(), "has_map_: %d, has_robot_pose_: %d, has_goal_: %d", 
+                     has_map_, has_robot_pose_, has_goal_);
         if (!has_map_ || !has_robot_pose_ || !has_goal_) {
             RCLCPP_WARN(get_logger(), "Waiting for map, robot pose, and goal...");
             return;

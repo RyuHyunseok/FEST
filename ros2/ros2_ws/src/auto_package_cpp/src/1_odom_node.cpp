@@ -10,11 +10,6 @@
 
 const double M_PI = std::acos(-1);
 
-// Windows에서 M_PI가 정의되지 않은 경우를 위한 정의
-// #ifndef M_PI
-// #define M_PI 3.14159265358979323846
-// #endif
-
 // Quaternion from Euler angles helper function
 // Replicating squaternion's functionality
 struct Quaternion {
