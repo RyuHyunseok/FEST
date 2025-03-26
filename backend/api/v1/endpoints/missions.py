@@ -10,6 +10,8 @@ from models.position import RobotPosition
 from schemas.mission import Mission as MissionSchema
 from schemas.mission import MissionCreate, MissionUpdate, MissionPath, RobotPathPoint
 
+from sqlalchemy import func
+
 router = APIRouter()
 
 @router.get("/", response_model=List[MissionSchema])
@@ -57,32 +59,37 @@ def get_mission_path(mission_id: str, db: Session = Depends(get_db)):
     path_points = []
     for pos in positions:
         # PostGIS Point 데이터에서 x, y 좌표 추출
-        # ST_AsText 또는 ST_X, ST_Y 함수를 사용하여 추출해야 하지만
-        # 여기서는 간단히 처리하기 위해 임시 데이터를 사용
-        
-        # 실제 구현에서는 아래와 같이 PostGIS 함수를 사용해야 함
-        # x = db.scalar(func.ST_X(pos.position))
-        # y = db.scalar(func.ST_Y(pos.position))
-        
-        # 임시 방법: position 객체에서 직접 접근 (실제 PostGIS에서는 다른 방식으로 접근해야 함)
-        x, y = 0.0, 0.0
         try:
-            # PostgreSQL의 공간 데이터 형식에 따라 접근 방식이 다를 수 있음
-            wkb_element = pos.position.desc
-            x = float(str(wkb_element).split('(')[1].split(' ')[0])
-            y = float(str(wkb_element).split(' ')[1].split(')')[0])
-        except (AttributeError, IndexError) as e:
-            # 좌표 추출에 실패한 경우 로그 기록
+            # Postgis 좌표 추출을 위해 ST_X, ST_Y 함수 사용
+            x = db.scalar(func.ST_X(pos.position))
+            y = db.scalar(func.ST_Y(pos.position))
+            
+            path_points.append({
+                "x": float(x),
+                "y": float(y),
+                "orientation": pos.orientation,
+                "recorded_at": pos.recorded_at
+            })
+        except Exception as e:
             print(f"Error extracting coordinates: {e}")
-        
-        path_points.append(RobotPathPoint(
-            x=x,
-            y=y,
-            orientation=pos.orientation,
-            recorded_at=pos.recorded_at
-        ))
     
-    return MissionPath(mission=mission, path_points=path_points)
+    # ORM 객체를 딕셔너리로 변환 - 중요!
+    mission_dict = {
+        "mission_id": mission.mission_id,
+        "robot_id": mission.robot_id,
+        "incident_id": mission.incident_id,
+        "status": mission.status,
+        "assigned_at": mission.assigned_at,
+        "arrived_at": mission.arrived_at,
+        "completed_at": mission.completed_at
+    }
+    
+    # MissionPath 응답 생성
+    return {
+        "mission": mission_dict,
+        "path_points": path_points
+    }
+
 
 @router.post("/", response_model=MissionSchema)
 def create_mission(mission: MissionCreate, db: Session = Depends(get_db)):

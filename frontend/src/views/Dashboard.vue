@@ -570,7 +570,7 @@ import StatusBadge from '../components/common/StatusBadge.vue';
         // 화재 데이터 콜백 등록
         const unsubscribeIncidents = wsService.onIncidentsData(data => {
           if (data.incidents) {
-            console.log('새로운 화재 데이터 수신:', data.incidents);
+            // console.log('새로운 화재 데이터 수신:', data.incidents);
             this.incidents = data.incidents;
           }
         });

@@ -36,7 +36,7 @@ export default {
     deep: true,
     immediate: true,
     handler(newIncidents, oldIncidents) {
-      console.log('MapViewer: incidents 변경 감지', newIncidents);
+      // console.log('MapViewer: incidents 변경 감지', newIncidents);
       this.updateIncidents(newIncidents);
       }
     }
@@ -301,22 +301,22 @@ export default {
 updateIncidents(incidents) {
   if (!this.scene) return;
   
-  console.log('updateIncidents 호출됨:', incidents);
+  // console.log('updateIncidents 호출됨:', incidents);
   
   // 현재 화재 ID 목록
   const currentIncidentIds = Object.keys(incidents);
-  console.log('현재 화재 ID들:', currentIncidentIds);
-  console.log('현재 맵에 있는 화재 ID들:', Object.keys(this.incidentMeshes));
+  // console.log('현재 화재 ID들:', currentIncidentIds);
+  // console.log('현재 맵에 있는 화재 ID들:', Object.keys(this.incidentMeshes));
   
   // 먼저 extinguished 상태의 화재 제거
   currentIncidentIds.forEach(incidentId => {
     const incidentData = incidents[incidentId];
-    console.log(`화재 ID ${incidentId} 상태:`, incidentData.status);
+    // console.log(`화재 ID ${incidentId} 상태:`, incidentData.status);
 
     // extinguished 상태면 화재 제거
     if (incidentData.status === 'extinguished') {
       if (this.incidentMeshes[incidentId]) {
-        console.log(`화재 ID ${incidentId} 제거 시도`);
+        // console.log(`화재 ID ${incidentId} 제거 시도`);
         try {
           // 화재 메시 참조 저장
           const meshToRemove = this.incidentMeshes[incidentId].mesh;
@@ -324,7 +324,7 @@ updateIncidents(incidents) {
           // 씬에서 제거
           if (meshToRemove) {
             this.scene.remove(meshToRemove);
-            console.log(`화재 ID ${incidentId} 씬에서 제거 성공`);
+            // console.log(`화재 ID ${incidentId} 씬에서 제거 성공`);
             
             // 메모리 해제
             if (meshToRemove.geometry) meshToRemove.geometry.dispose();
@@ -353,9 +353,9 @@ updateIncidents(incidents) {
           
           // 객체에서 제거
           delete this.incidentMeshes[incidentId];
-          console.log(`화재 ID ${incidentId} 완전히 제거됨`);
+          // console.log(`화재 ID ${incidentId} 완전히 제거됨`);
         } catch (error) {
-          console.error(`화재 ID ${incidentId} 제거 중 오류:`, error);
+          // console.error(`화재 ID ${incidentId} 제거 중 오류:`, error);
         }
       }
     }
@@ -373,17 +373,17 @@ updateIncidents(incidents) {
     
     // 화재가 맵에 없으면 새로 생성
     if (!this.incidentMeshes[incidentId]) {
-      console.log(`새 화재 ID ${incidentId} 생성`);
+      // console.log(`새 화재 ID ${incidentId} 생성`);
       this.createIncidentMesh(incidentId, incidentData.location);
     } else {
       // 위치만 업데이트
-      console.log(`화재 ID ${incidentId} 위치 업데이트`);
+      // console.log(`화재 ID ${incidentId} 위치 업데이트`);
       const incidentMesh = this.incidentMeshes[incidentId].mesh;
       incidentMesh.position.set(incidentData.location.y, 0, incidentData.location.x);
     }
   });
   
-  console.log('업데이트 후 맵에 남은 화재 ID들:', Object.keys(this.incidentMeshes));
+  // console.log('업데이트 후 맵에 남은 화재 ID들:', Object.keys(this.incidentMeshes));
 }
 
 

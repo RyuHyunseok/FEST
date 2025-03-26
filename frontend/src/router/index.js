@@ -4,7 +4,9 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
 import Dashboard from '../views/Dashboard.vue'
 // 심플 대시보드는 남겨두지만 사용하지 않음
+import IncidentHistory from '../views/IncidentHistory.vue'
 import DashboardSimple from '../views/DashboardSimple.vue'
+
 const routes = [
   {
     path: '/',
@@ -19,6 +21,11 @@ const routes = [
     path: '/dashboard',
     name: 'Dashboard',
     component: Dashboard
+  },
+  {
+    path: '/incidents',
+    name: 'IncidentHistory',
+    component: IncidentHistory
   },
   // 404 페이지
   {
