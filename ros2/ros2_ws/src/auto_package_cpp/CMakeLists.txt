@@ -229,6 +229,7 @@ add_executable(goal_publisher src/goal_publisher.cpp)
 ament_target_dependencies(goal_publisher
   "rclcpp"
   "geometry_msgs"
+  "nav_msgs"
   "ament_index_cpp")
 target_link_libraries(goal_publisher file_path)
 
