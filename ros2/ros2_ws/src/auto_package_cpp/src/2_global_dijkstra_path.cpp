@@ -41,23 +41,36 @@ public:
         map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
             "/cost_map", 1, std::bind(&DijkstraPlanner::map_callback, this, std::placeholders::_1));
         
+        // =============================================
         // MQTT 핸들러 초기화 및 설정
+        // =============================================
+        
+        // MQTT 브로커 연결 설정 (localhost:1883)
         mqtt_handler_ = std::make_unique<MqttHandler>("localhost", 1883);
+        
+        // MQTT 연결 시도 및 콜백 설정
         if (mqtt_handler_->connect()) {
+            // 목표점 수신 시 실행될 콜백 함수 설정
             mqtt_handler_->set_goal_callback([this](double x, double y) {
+                // 수신된 좌표를 geometry_msgs::Point 메시지로 변환
                 geometry_msgs::msg::Point goal_point;
                 goal_point.x = x;
                 goal_point.y = y;
+                // goal_callback 함수 호출하여 경로 계획 시작
                 goal_callback(std::make_shared<geometry_msgs::msg::Point>(goal_point));
             });
             RCLCPP_INFO(get_logger(), "MQTT handler initialized successfully");
-        } else {
-            // MQTT 연결 실패 시 ROS2 토픽 사용
+        } else {    // MQTT 연결 실패 시 대체 처리
+            // ROS2 토픽을 통한 목표점 수신 설정
             goal_sub_ = create_subscription<geometry_msgs::msg::Point>(
                 "/goal_point", 10,
                 std::bind(&DijkstraPlanner::goal_callback, this, std::placeholders::_1));
             RCLCPP_WARN(get_logger(), "MQTT connection failed, using ROS2 topic /goal_point");
         }
+
+        // =============================================
+        // MQTT 또는 ROS2 토픽을 통한 목표점 수신 설정 종료
+        // =============================================
 
         // 로봇의 실제 위치를 받기 위한 구독자 추가
         odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(

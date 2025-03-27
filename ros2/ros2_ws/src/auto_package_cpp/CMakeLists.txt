@@ -32,6 +32,9 @@ find_package(ament_index_cpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 
+# nlohmann/json 라이브러리 찾기
+# find_package(nlohmann_json REQUIRED)
+
 # 커스텀 메시지 및 네비게이션 관련 패키지
 find_package(ssafy_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
@@ -197,7 +200,7 @@ ament_target_dependencies(follow_the_carrot
   "nav_msgs"
   "geometry_msgs"
   "ssafy_msgs"
-  "sensor_msgs"
+  # "sensor_msgs"
   "tf2_ros")
 
 # 9. mapping_node: SLAM 매핑 노드
@@ -221,7 +224,7 @@ ament_target_dependencies(make_path
   "geometry_msgs")
 target_link_libraries(make_path file_path)
 
-# 11. goal_publisher: 목표점 발행 노드
+# 11. goal_publisher: 목표점 발행 노드 (수동, 자동 모드 선택)
 add_executable(goal_publisher src/goal_publisher.cpp)
 ament_target_dependencies(goal_publisher
   "rclcpp"
@@ -229,14 +232,25 @@ ament_target_dependencies(goal_publisher
   "ament_index_cpp")
 target_link_libraries(goal_publisher file_path)
 
-# 12. auto_goal_manager: 자동 목표점 관리 노드
-add_executable(auto_goal_manager src/auto_goal_publisher.cpp)
-ament_target_dependencies(auto_goal_manager
+# 11-1. goal_publisher_manual: 수동 목표점 발행 노드
+add_executable(goal_publisher_manual src/goal_publisher_manual.cpp)
+ament_target_dependencies(goal_publisher_manual
+  "rclcpp"
+  "geometry_msgs")
+
+# 11-2. goal_publisher_auto: 자동 목표점 관리 노드
+add_executable(goal_publisher_auto src/goal_publisher_auto.cpp)
+ament_target_dependencies(goal_publisher_auto
   "rclcpp"
   "geometry_msgs"
-  "std_msgs"
-  "ament_index_cpp")
-target_link_libraries(auto_goal_manager file_path)
+  "nav_msgs")
+target_link_libraries(goal_publisher_auto file_path)
+
+# 11-3. test_odom_publisher: 테스트용 odom 발행 노드
+add_executable(test_odom_publisher src/test_odom_publisher.cpp)
+ament_target_dependencies(test_odom_publisher
+  "rclcpp"
+  "nav_msgs")
 
 # 0. my_node: 기본 노드 (현재 비활성화)
 # add_executable(my_node src/my_node.cpp)
@@ -265,7 +279,9 @@ install(TARGETS
   mapping_node
   make_path
   goal_publisher
-  auto_goal_manager
+  goal_publisher_manual
+  goal_publisher_auto
+  test_odom_publisher
   EXPORT export_${PROJECT_NAME}
   DESTINATION lib/${PROJECT_NAME})
 
