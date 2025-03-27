@@ -19,7 +19,7 @@ from models.mission import FirefightingMission
 redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 # 위치 데이터 샘플링을 위한 설정
-POSITION_SAMPLE_INTERVAL = 10  # 10초마다 위치 데이터 저장
+POSITION_SAMPLE_INTERVAL = 1  # 1초마다 위치 데이터 저장
 last_position_save = {}        # 로봇별 마지막 저장 시간 추적용 딕셔너리
 
 # 위치 데이터를 샘플링할지 결정하는 함수
@@ -108,9 +108,9 @@ def on_message(client, userdata, msg):
                 # 데이터베이스에 상태 업데이트 저장
                 update_incident_status(incident_id, message)
 
-        # 미션 상태 업데이트 처리 (topic: missions/{mission_id}/update)
-        elif topic.startswith("missions/") and topic.endswith("/update"):
-            # 토픽에서 미션 ID 추출 (형식: missions/{mission_id}/update)
+        # 미션 상태 업데이트 처리 (topic: mission/{mission_id}/update)
+        elif topic.startswith("mission/") and topic.endswith("/update"):
+            # 토픽에서 미션 ID 추출 (형식: mission/{mission_id}/update)
             parts = topic.split('/')
             if len(parts) >= 3:
                 mission_id = parts[1]
@@ -257,6 +257,22 @@ def update_incident_status(incident_id, status_data):
                 incident.extinguished_at = datetime.datetime.fromtimestamp(extinguished_ts)
             except Exception as e:
                 print(f"Error converting extinguished_at: {e}")
+        
+        # 화재가 진압된 경우(status = extinguished), 관련 미션도 완료로 처리
+        if "status" in status_data and status_data["status"] == "extinguished":
+            # 해당 incident_id에 연결된 미션 조회
+            from models.mission import FirefightingMission
+            mission = db.query(FirefightingMission).filter(
+                FirefightingMission.incident_id == incident_id,
+                FirefightingMission.status != "completed"  # 아직 완료되지 않은 미션만
+            ).first()
+            
+            if mission:
+                # 미션 상태 업데이트
+                mission.status = "completed"
+                # 완료 시간 설정
+                mission.completed_at = incident.extinguished_at or datetime.datetime.now()
+                print(f"Mission {mission.mission_id} status updated to completed")
         
         db.commit()
         print(f"화재 상태 업데이트: {incident}")

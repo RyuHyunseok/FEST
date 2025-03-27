@@ -17,7 +17,7 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(ament_cmake_target_dependencies REQUIRED)
+# find_package(ament_cmake_target_dependencies REQUIRED)
 # uncomment the following section in order to fill in
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)

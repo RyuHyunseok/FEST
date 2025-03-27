@@ -110,23 +110,41 @@ class WebSocketService {
   // 모든 WebSocket 연결
   connect() {
     const token = localStorage.getItem('authToken');
+    console.log('WebSocket 연결 시작, 토큰 존재:', !!token);
+    
     if (!token) return;
     
     this.isLoggedOut = false;
-    this.connectRobots(token);
-    this.connectIncidents(token);
+    
+    // 이미 연결되었거나 연결 중인 경우 중복 연결 방지
+    if (this.robotsSocket && (this.robotsSocket.readyState === 0 || this.robotsSocket.readyState === 1)) {
+      console.log('로봇 WebSocket이 이미 연결됨 또는 연결 중');
+    } else {
+      console.log('로봇 WebSocket 새 연결 시작');
+      this.connectRobots(token);
+    }
+    
+    if (this.incidentsSocket && (this.incidentsSocket.readyState === 0 || this.incidentsSocket.readyState === 1)) {
+      console.log('화재 WebSocket이 이미 연결됨 또는 연결 중');
+    } else {
+      console.log('화재 WebSocket 새 연결 시작');
+      this.connectIncidents(token);
+    }
   }
 
   // 모든 WebSocket 연결 종료
   disconnect() {
+    console.log('WebSocket 연결 종료 시작');
     this.isLoggedOut = true;
     
     if (this.robotsSocket) {
+      console.log('로봇 WebSocket 연결 종료 중...');
       this.robotsSocket.close();
       this.robotsSocket = null;
     }
     
     if (this.incidentsSocket) {
+      console.log('화재 WebSocket 연결 종료 중...');
       this.incidentsSocket.close();
       this.incidentsSocket = null;
     }
@@ -134,6 +152,7 @@ class WebSocketService {
     this.connected.robots = false;
     this.connected.incidents = false;
     this._notifyConnectionStatus();
+    console.log('모든 WebSocket 연결 종료 완료');
   }
 
   // 연결 상태 확인

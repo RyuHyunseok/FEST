@@ -247,8 +247,10 @@ incidents/{incident_id}/status # 화재 상태 업데이트
 ### 로봇 명령 메시지 (robots/{robot_id}/command)
 ```json
 {
-//   "type": "move_to",  // move_to, extinguish
-  "target": {"x": 25.5, "y": 30.2}
+    // "type": "move_to", // move_to, extinguish
+    "target": {"x": 25.5, "y": 30.2},
+    "mission_id": "mission_id",  // 미션 ID 포함
+    "incident_id": "incident_id"  // 화재 ID 포함
 }
 ```
 
@@ -277,7 +279,7 @@ incidents/{incident_id}/status # 화재 상태 업데이트
 - `GET /api/v1/robots/{robot_id}` - 특정 로봇 정보 조회
 - `GET /api/v1/robots/{robot_id}/status` - 로봇 상태 조회
 - `GET /api/v1/robots/{robot_id}/position` - 로봇 현재 위치 조회
-- `POST /api/v1/robots/{robot_id}/command` - 로봇에 명령 전송
+<!-- - `POST /api/v1/robots/{robot_id}/command` - 로봇에 명령 전송 -->
 
 ### 화재 알람 관련 API
 - `GET /api/v1/incidents` - 모든 화재 사고 목록

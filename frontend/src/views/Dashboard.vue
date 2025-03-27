@@ -494,6 +494,15 @@ import StatusBadge from '../components/common/StatusBadge.vue';
     this.setupWebSockets();
   },
 
+  beforeUnmount() {
+  console.log('[Dashboard] 컴포넌트 언마운트 전 정리 작업');
+  // 모든 구독 해제
+  this.unsubscribeAll();
+  
+  // Dashboard에서 벗어날 때 웹소켓 연결 종료
+  wsService.disconnect();
+},
+
     methods: {
     
         initBasicData() {
@@ -553,6 +562,9 @@ import StatusBadge from '../components/common/StatusBadge.vue';
       },
       
       setupWebSockets() {
+
+        console.log('[Dashboard] 웹소켓 설정 시작');
+
         // 연결 상태 변경 콜백 등록
         const unsubscribeConnection = wsService.onConnectionChange(status => {
           this.connectionStatus = status;
@@ -570,7 +582,7 @@ import StatusBadge from '../components/common/StatusBadge.vue';
         // 화재 데이터 콜백 등록
         const unsubscribeIncidents = wsService.onIncidentsData(data => {
           if (data.incidents) {
-            console.log('새로운 화재 데이터 수신:', data.incidents);
+            // console.log('새로운 화재 데이터 수신:', data.incidents);
             this.incidents = data.incidents;
           }
         });
