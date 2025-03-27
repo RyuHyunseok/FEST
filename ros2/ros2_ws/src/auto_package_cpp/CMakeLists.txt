@@ -113,11 +113,12 @@ ament_target_dependencies(local_path_planner
 )
 
 # mapping_node 추가
-if(WIN32)
-  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "C:/dev/ros2-windows/share/eigen3_cmake_module/cmake")
-  find_package(Eigen3 REQUIRED)
-  set(EIGEN3_INCLUDE_DIR "C:/dev/ros2-windows/include/eigen3")
-endif()
+# if(WIN32)
+#   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "C:/dev/ros2-windows/share/eigen3_cmake_module/cmake")
+#   find_package(Eigen3 REQUIRED)
+#   set(EIGEN3_INCLUDE_DIR "C:/dev/ros2-windows/include/eigen3")
+# endif()
+find_package(Eigen3 REQUIRED)
 
 add_executable(mapping_node src/mapping.cpp)
 target_include_directories(mapping_node PRIVATE
