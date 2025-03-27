@@ -1,4 +1,22 @@
-﻿#include "rclcpp/rclcpp.hpp"
+﻿/*
+ * Global Dijkstra Path Planner Node
+ * 
+ * 기능:
+ * - 다익스트라 알고리즘을 사용하여 전역 경로 계획
+ * - 비용 맵을 기반으로 최적의 경로 생성
+ * - MQTT를 통한 목표점 수신
+ * 
+ * 토픽:
+ * - 구독:
+ *   - /cost_map: 비용 맵 데이터
+ *   - /odom: 로봇의 위치 정보
+ *   - /goal_point: 목표점 정보
+ * - 발행:
+ *   - /global_path: 계획된 전역 경로
+ *   - /visualization_marker_array: 경로 시각화 마커
+ */
+
+#include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"

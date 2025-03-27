@@ -1,3 +1,18 @@
+/*
+ * Automatic Goal Publisher Node
+ * 
+ * 기능:
+ * - 파일에서 읽은 경로의 목표점을 자동으로 순차 발행
+ * - 로봇의 위치를 모니터링하여 목표점 도달 감지
+ * - 경로의 끝에 도달하면 처음부터 다시 시작
+ * 
+ * 토픽:
+ * - 구독:
+ *   - /odom: 로봇의 위치 정보
+ * - 발행:
+ *   - /goal_point: 다음 목표점 정보
+ */
+
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "nav_msgs/msg/odometry.hpp"

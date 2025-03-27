@@ -1,3 +1,19 @@
+/*
+ * SLAM Mapping Node
+ * 
+ * 기능:
+ * - 라이다 데이터를 기반으로 환경 맵 생성
+ * - 로봇의 위치 정보를 이용한 맵 업데이트
+ * - 생성된 맵을 PGM 파일로 저장
+ * 
+ * 토픽:
+ * - 구독:
+ *   - /scan: 라이다 스캔 데이터
+ *   - /odom: 로봇의 위치 정보
+ * - 발행:
+ *   - /map: 생성된 맵 데이터
+ */
+
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>

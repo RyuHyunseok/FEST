@@ -1,3 +1,14 @@
+"""
+MQTT 토픽 발행 테스트 노드
+
+이 노드는 MQTT를 통해 로봇의 위치와 상태를 시뮬레이션하여 발행합니다.
+주요 기능:
+- 로봇의 부드러운 이동 시뮬레이션
+- 배터리 상태 및 로봇 상태 발행
+- 화재 발생 시뮬레이션 및 화재 진압 작업 시뮬레이션
+- 미션 상태 업데이트
+"""
+
 import rclpy
 from rclpy.node import Node
 import paho.mqtt.client as mqtt
@@ -6,9 +17,9 @@ import math
 import json
 import uuid
 
-class SmoothPositionPublisher(Node):
+class TestMqttTopicPublisher(Node):
     def __init__(self):
-        super().__init__('smooth_position_publisher')
+        super().__init__('test_mqtt_topic_publisher')
 
         # 로봇 ID 설정 (실제 프로젝트에서는 파라미터로 받을 수 있음)
         self.robot_id = "fest_1"
@@ -183,7 +194,7 @@ class SmoothPositionPublisher(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = SmoothPositionPublisher()
+    node = TestMqttTopicPublisher()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

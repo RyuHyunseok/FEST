@@ -1,21 +1,18 @@
 <?xml version="1.0"?>
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
-  <name>ros2_publish_test</name>
+  <name>test_topic_publisher_py</name>
   <version>0.0.0</version>
   <description>TODO: Package description</description>
-  <maintainer email="SSAFY@todo.todo">SSAFY</maintainer>
+  <maintainer email="ehddnr0929@naver.com">SSAFY</maintainer>
   <license>TODO: License declaration</license>
 
-  <depend>rclpy</depend>      <!-- ROS2 Python 클라이언트 라이브러리 -->
-  <depend>std_msgs</depend>   <!-- ROS2 메시지 유형 (예: String, Int32 등) -->
-  <depend>geometry_msgs</depend>  <!-- 로봇 위치, 방향 등을 위한 메시지 유형 -->
-  
-  <!-- 브릿지 패키지 -->
-  <depend>diagnostic_msgs</depend>
-  <depend>geographic_msgs</depend>
-  <depend>paho-mqtt</depend>
-  
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <depend>rclpy</depend>
+  <depend>nav_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>python3-paho-mqtt</depend>
 
   <test_depend>ament_copyright</test_depend>
   <test_depend>ament_flake8</test_depend>

@@ -1,3 +1,20 @@
+/*
+ * Follow The Carrot Path Tracking Node
+ * 
+ * 기능:
+ * - Pure Pursuit 알고리즘을 사용한 경로 추적
+ * - 동적 Look Forward Distance 조정
+ * - 목표점 도달 감지 및 정지
+ * 
+ * 토픽:
+ * - 구독:
+ *   - /local_path: 추적할 로컬 경로
+ *   - /odom: 로봇의 위치 정보
+ *   - /turtlebot_status: 로봇의 상태 정보
+ * - 발행:
+ *   - /cmd_vel: 로봇 제어 명령
+ */
+
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/point.hpp"

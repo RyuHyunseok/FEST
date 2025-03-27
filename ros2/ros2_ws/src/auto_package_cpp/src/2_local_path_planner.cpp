@@ -1,3 +1,21 @@
+/*
+ * Lattice Path Planner Node
+ * 
+ * 기능:
+ * - 격자 기반의 후보 경로 생성
+ * - 전역 경로를 기반으로 여러 후보 경로 생성
+ * - 장애물 회피를 위한 최적 경로 선택
+ * 
+ * 토픽:
+ * - 구독:
+ *   - /global_path: 전역 경로
+ *   - /odom: 로봇의 위치 정보
+ *   - /scan: 라이다 스캔 데이터
+ * - 발행:
+ *   - /local_path: 선택된 로컬 경로
+ *   - /candidate_paths: 생성된 후보 경로들
+ */
+
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav_msgs/msg/odometry.hpp"

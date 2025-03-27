@@ -1,3 +1,16 @@
+/*
+ * Manual Goal Publisher Node
+ * 
+ * 기능:
+ * - 사용자 입력을 통해 목표점을 수동으로 발행
+ * - 입력된 좌표의 유효성 검사
+ * - 종료 명령 처리
+ * 
+ * 토픽:
+ * - 발행:
+ *   - /goal_point: 사용자가 입력한 목표점 정보
+ */
+
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include <iostream>

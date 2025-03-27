@@ -1,3 +1,16 @@
+"""
+MQTT 토픽과 ROS2 토픽 간의 변환 관계:
+
+MQTT 토픽                    ->  ROS2 토픽
+--------------------------------------------------------
+robots/fest_1/position      ->  robot/position (Pose2D)
+robots/fest_1/status        ->  robot/battery (Float32)
+                             ->  robot/status (String)
+incidents/new               ->  goal_point (Point)
+incidents/+/status         ->  incidents/status (String)
+missions/+/update          ->  missions/status (String)
+"""
+
 import rclpy
 from rclpy.node import Node
 import paho.mqtt.client as mqtt

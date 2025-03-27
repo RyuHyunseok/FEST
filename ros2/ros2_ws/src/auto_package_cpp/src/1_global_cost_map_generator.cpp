@@ -1,3 +1,16 @@
+/*
+ * Global Cost Map Generator Node
+ * 
+ * 기능: 
+ * - PGM 맵 파일을 읽어서 전역 비용 맵을 생성
+ * - 장애물 주변에 비용을 부여하여 안전한 경로 계획을 위한 비용 맵 생성
+ * 
+ * 토픽:
+ * - 발행: 
+ *   - /map: 기본 맵 데이터
+ *   - /cost_map: 장애물 주변에 비용이 부여된 비용 맵
+ */
+
 #include <rclcpp/rclcpp.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nav_msgs/msg/map_meta_data.hpp>

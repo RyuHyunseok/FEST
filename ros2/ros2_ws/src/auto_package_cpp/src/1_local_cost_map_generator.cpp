@@ -1,3 +1,18 @@
+/*
+ * Local Cost Map Generator Node
+ * 
+ * 기능:
+ * - 라이다 데이터를 기반으로 로컬 비용 맵 생성
+ * - 로봇 주변의 장애물을 실시간으로 감지하고 비용 맵에 반영
+ * 
+ * 토픽:
+ * - 구독:
+ *   - /scan: 라이다 스캔 데이터
+ *   - /odom: 로봇의 위치 정보
+ * - 발행:
+ *   - /local_cost_map: 로봇 주변의 실시간 비용 맵
+ */
+
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"

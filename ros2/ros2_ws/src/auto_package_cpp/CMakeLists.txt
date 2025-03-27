@@ -247,12 +247,6 @@ ament_target_dependencies(goal_publisher_auto
   "nav_msgs")
 target_link_libraries(goal_publisher_auto file_path)
 
-# 11-3. test_odom_publisher: 테스트용 odom 발행 노드
-add_executable(test_odom_publisher src/test_odom_publisher.cpp)
-ament_target_dependencies(test_odom_publisher
-  "rclcpp"
-  "nav_msgs")
-
 # 0. my_node: 기본 노드 (현재 비활성화)
 # add_executable(my_node src/my_node.cpp)
 # target_include_directories(my_node PUBLIC
@@ -282,7 +276,6 @@ install(TARGETS
   goal_publisher
   goal_publisher_manual
   goal_publisher_auto
-  test_odom_publisher
   EXPORT export_${PROJECT_NAME}
   DESTINATION lib/${PROJECT_NAME})
 

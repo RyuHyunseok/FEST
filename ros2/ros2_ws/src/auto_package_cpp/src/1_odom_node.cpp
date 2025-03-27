@@ -1,3 +1,20 @@
+/*
+ * Odometry Node
+ * 
+ * 기능:
+ * - 로봇의 위치와 방향 정보를 추적하고 발행
+ * - TF 트리에서 base_link와 laser 프레임 간의 변환 관계 유지
+ * 
+ * 토픽:
+ * - 구독:
+ *   - /turtlebot_status: 로봇의 상태 정보
+ * - 발행:
+ *   - /odom: 로봇의 위치와 방향 정보
+ * - TF 발행:
+ *   - map -> base_link
+ *   - base_link -> laser
+ */
+
 #include "rclcpp/rclcpp.hpp"
 #include "ssafy_msgs/msg/turtlebot_status.hpp"
 #include "nav_msgs/msg/odometry.hpp"

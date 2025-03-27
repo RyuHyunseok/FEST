@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'ros2_publish_test'
+package_name = 'test_topic_publisher_py'
 
 setup(
     name=package_name,
@@ -14,16 +14,14 @@ setup(
     install_requires=['setuptools'],
     zip_safe=True,
     maintainer='SSAFY',
-    maintainer_email='SSAFY@todo.todo',
+    maintainer_email='ehddnr0929@naver.com',
     description='TODO: Package description',
     license='TODO: License declaration',
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'smooth_position_publisher = ros2_publish_test.smooth_position_publisher:main',
-            'mqtt_command_subscriber = ros2_publish_test.mqtt_command_subscriber:main',
-            'ros2_mqtt_bridge = ros2_publish_test.ros2_mqtt_bridge:main',
-            'mqtt_ros2_bridge = ros2_publish_test.mqtt_ros2_bridge:main',
+            'test_mqtt_topic_publisher = test_topic_publisher_py.test_mqtt_topic_publisher:main',
+            'test_odom_scan_publisher = test_topic_publisher_py.test_odom_scan_publisher:main',
         ],
     },
 )

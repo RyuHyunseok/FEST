@@ -1,3 +1,19 @@
+/*
+ * Hybrid Goal Publisher Node
+ * 
+ * 기능:
+ * - 자동/수동 모드 전환 가능한 목표점 발행
+ * - 파일에서 읽은 경로의 목표점 자동 발행
+ * - 사용자 입력을 통한 수동 목표점 발행
+ * - 목표점 도달 감지 및 다음 목표점 발행
+ * 
+ * 토픽:
+ * - 구독:
+ *   - /odom: 로봇의 위치 정보
+ * - 발행:
+ *   - /goal_point: 목표점 정보
+ */
+
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "nav_msgs/msg/odometry.hpp"
