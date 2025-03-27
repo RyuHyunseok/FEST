@@ -12,6 +12,50 @@
         
         <!-- 메인 콘텐츠 영역 -->
         <v-container fluid class="pa-4">
+
+                    <!-- 화재 모니터링 섹션 (버튼만 배치) -->
+                    <v-row class="mt-4">
+            <v-col cols="12">
+              <v-card>
+                <v-card-title class="d-flex justify-space-between align-center">
+                  <div class="d-flex align-center">
+                    <v-icon color="error" class="mr-2">mdi-fire-alert</v-icon>
+                    <span>화재 모니터링</span>
+                  </div>
+                  <v-btn
+                    color="error"
+                    variant="outlined"
+                    prepend-icon="mdi-fire"
+                    @click="$router.push('/incidents')"
+                  >
+                    화재 이력 보기
+                  </v-btn>
+                </v-card-title>
+                
+                <v-divider></v-divider>
+                
+                <v-card-text v-if="activeIncidentCount === 0" class="text-center py-4">
+                  <v-icon icon="mdi-check-circle" size="large" color="success" class="mb-2"></v-icon>
+                  <div class="text-body-1">현재 활성화된 화재가 없습니다</div>
+                  <div class="text-caption text-medium-emphasis">시스템이 상황을 모니터링 중입니다</div>
+                </v-card-text>
+                
+                <v-card-text v-else class="text-center py-4">
+                  <v-icon icon="mdi-fire-alert" size="large" color="error" class="mb-2"></v-icon>
+                  <div class="text-body-1">{{ activeIncidentCount }}건의 화재가 진행 중입니다!</div>
+                  <v-btn
+                    color="error"
+                    class="mt-2"
+                    @click="$router.push('/incidents')"
+                  >
+                    화재 상세 정보 보기
+                  </v-btn>
+                </v-card-text>
+              </v-card>
+            </v-col>
+          </v-row>
+
+
           <!-- 연결 상태 알림 -->
           <!-- <v-row v-if="!isAllConnected">
             <v-col cols="12">
@@ -36,7 +80,7 @@
           </v-row> -->
           
           <!-- 상태 요약 카드 -->
-          <v-row>
+          <!-- <v-row>
             <v-col cols="12" sm="6" md="3">
               <v-card class="dashboard-card">
                 <v-card-text class="d-flex align-center">
@@ -92,7 +136,7 @@
                 </v-card-text>
               </v-card>
             </v-col>
-          </v-row>
+          </v-row> -->
           
           <!-- 메인 콘텐츠 -->
           <v-row>
@@ -225,7 +269,7 @@
                   </v-sheet>
                   
                   <!-- 명령 버튼 -->
-                  <div class="d-flex justify-space-between">
+                  <!-- <div class="d-flex justify-space-between">
                     <v-btn
                       color="primary"
                       variant="tonal"
@@ -243,10 +287,10 @@
                     >
                       진화 명령
                     </v-btn>
-                  </div>
+                  </div> -->
                   
                   <!-- 경로 보기 버튼 -->
-                  <v-btn
+                  <!-- <v-btn
                     color="info"
                     variant="text"
                     block
@@ -254,53 +298,12 @@
                     prepend-icon="mdi-map-marker-path"
                   >
                     로봇 경로 보기
-                  </v-btn>
+                  </v-btn> -->
                 </v-card-text>
               </v-card>
             </v-col>
           </v-row>
-          
-          <!-- 화재 모니터링 섹션 (버튼만 배치) -->
-          <v-row class="mt-4">
-            <v-col cols="12">
-              <v-card>
-                <v-card-title class="d-flex justify-space-between align-center">
-                  <div class="d-flex align-center">
-                    <v-icon color="error" class="mr-2">mdi-fire-alert</v-icon>
-                    <span>화재 모니터링</span>
-                  </div>
-                  <v-btn
-                    color="error"
-                    variant="outlined"
-                    prepend-icon="mdi-fire"
-                    @click="$router.push('/incidents')"
-                  >
-                    화재 이력 보기
-                  </v-btn>
-                </v-card-title>
-                
-                <v-divider></v-divider>
-                
-                <v-card-text v-if="activeIncidentCount === 0" class="text-center py-4">
-                  <v-icon icon="mdi-check-circle" size="large" color="success" class="mb-2"></v-icon>
-                  <div class="text-body-1">현재 활성화된 화재가 없습니다</div>
-                  <div class="text-caption text-medium-emphasis">시스템이 상황을 모니터링 중입니다</div>
-                </v-card-text>
-                
-                <v-card-text v-else class="text-center py-4">
-                  <v-icon icon="mdi-fire-alert" size="large" color="error" class="mb-2"></v-icon>
-                  <div class="text-body-1">{{ activeIncidentCount }}건의 화재가 진행 중입니다!</div>
-                  <v-btn
-                    color="error"
-                    class="mt-2"
-                    @click="$router.push('/incidents')"
-                  >
-                    화재 상세 정보 보기
-                  </v-btn>
-                </v-card-text>
-              </v-card>
-            </v-col>
-          </v-row>
+
         </v-container>
       </div>
       

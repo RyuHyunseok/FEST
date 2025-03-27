@@ -9,7 +9,7 @@
           @toggle-drawer="drawer = !drawer"
         />
         
-        <v-container fluid class="pa-4">
+        <v-container fluid class="pa-4 mt-15">
           <!-- 로딩 표시 -->
           <v-row v-if="isLoading">
             <v-col cols="12" class="text-center">
@@ -128,7 +128,7 @@
                 </v-card>
                 
                 <!-- 미션 정보 카드 -->
-                <v-card v-if="selectedMission" class="mb-4">
+                <!-- <v-card v-if="selectedMission" class="mb-4">
                   <v-card-title class="d-flex justify-space-between align-center">
                     <div class="d-flex align-center">
                       <v-icon color="primary" class="mr-2">mdi-clipboard-check</v-icon>
@@ -195,7 +195,7 @@
                       {{ calculateDuration(selectedMission.assigned_at, selectedMission.completed_at) }}
                     </div>
                   </v-card-text>
-                </v-card>
+                </v-card> -->
                 
                 <!-- 경로 시각화 카드 (로봇 경로 Map) -->
                 <v-card>
@@ -213,15 +213,15 @@
                   
                   <!-- 이 코드로 카드 내용 부분을 교체 -->
 <v-card-text>
-  <div style="border: 1px solid red; padding: 10px; margin-bottom: 10px;">
-    <!-- 디버깅 정보 -->
+  <!-- <div style="border: 1px solid red; padding: 10px; margin-bottom: 10px;">
+
     <div class="text-body-2 mb-2">
       <strong>디버깅 정보:</strong><br>
       경로 포인트: {{ pathPoints.length }}개<br>
       로딩 상태: {{ isLoadingPath ? '로딩 중' : '로딩 완료' }}<br>
       화재 위치: {{ selectedIncident && selectedIncident.location ? `X: ${selectedIncident.location.x}, Y: ${selectedIncident.location.y}` : '없음' }}
     </div>
-  </div>
+  </div> -->
 
   <div v-if="isLoadingPath" class="text-center py-4">
     <v-progress-circular indeterminate color="primary"></v-progress-circular>
@@ -229,7 +229,7 @@
   </div>
   
   <!-- 경로 시각화 컴포넌트 - 항상 표시 -->
-  <div class="path-map-container" style="height: 400px; border: 2px solid blue;">
+  <div class="path-map-container">
     <path-map-viewer
       :path-points="pathPoints"
       :incident="selectedIncident"
