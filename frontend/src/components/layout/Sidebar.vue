@@ -92,27 +92,27 @@
             icon: 'mdi-view-dashboard',
             to: '/dashboard'
           },
-          {
-            title: '로봇 모니터링',
-            icon: 'mdi-robot',
-            to: '/robots',
-            badge: '1'
-          },
+          // {
+          //   title: '로봇 모니터링',
+          //   icon: 'mdi-robot',
+          //   to: '/robots',
+          //   badge: '1'
+          // },
           {
             title: '화재 이력',
             icon: 'mdi-fire',
             to: '/incidents'
           },
-          {
-            title: '미션 관리',
-            icon: 'mdi-clipboard-list',
-            to: '/missions'
-          },
-          {
-            title: '설정',
-            icon: 'mdi-cog',
-            to: '/settings'
-          }
+          // {
+          //   title: '미션 관리',
+          //   icon: 'mdi-clipboard-list',
+          //   to: '/missions'
+          // },
+          // {
+          //   title: '설정',
+          //   icon: 'mdi-cog',
+          //   to: '/settings'
+          // }
         ]
       };
     },

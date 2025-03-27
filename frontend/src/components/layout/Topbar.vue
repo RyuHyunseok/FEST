@@ -27,7 +27,7 @@
   
       <v-spacer></v-spacer>
   
-      <div v-if="connectionStatus" class="connection-status d-flex align-center mr-3">
+      <!-- <div v-if="connectionStatus" class="connection-status d-flex align-center mr-3">
         <div class="status-indicator mr-2">
           <v-icon
             :color="allConnected ? 'success' : 'error'"
@@ -36,7 +36,7 @@
           ></v-icon>
         </div>
         <span class="text-caption">{{ connectionStatusText }}</span>
-      </div>
+      </div> -->
   
       <v-btn
         v-if="refreshAction"

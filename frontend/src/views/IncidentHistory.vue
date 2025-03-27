@@ -9,7 +9,7 @@
           @toggle-drawer="drawer = !drawer"
         />
         
-        <v-container fluid class="pa-4">
+        <v-container fluid class="pa-4 mt-12">
           <!-- 로딩 표시 -->
           <v-row v-if="isLoading">
             <v-col cols="12" class="text-center">
