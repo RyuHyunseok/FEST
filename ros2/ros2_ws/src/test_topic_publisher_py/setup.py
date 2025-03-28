@@ -20,7 +20,7 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'test_mqtt_topic_publisher = test_topic_publisher_py.test_mqtt_topic_publisher:main',
+            'smooth_position_publisher = test_topic_publisher_py.smooth_position_publisher:main',
             'test_scan_topic_publisher = test_topic_publisher_py.test_scan_topic_publisher:main',
             'test_turtlebot_status_topic_publisher = test_topic_publisher_py.test_turtlebot_status_topic_publisher:main',
         ],

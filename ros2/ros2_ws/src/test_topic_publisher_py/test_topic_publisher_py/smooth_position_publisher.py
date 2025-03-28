@@ -17,9 +17,9 @@ import math
 import json
 import uuid
 
-class TestMqttTopicPublisher(Node):
+class SmoothPositionPublisher(Node):
     def __init__(self):
-        super().__init__('test_mqtt_topic_publisher')
+        super().__init__('smooth_position_publisher')
 
         # 로봇 ID 설정 (실제 프로젝트에서는 파라미터로 받을 수 있음)
         self.robot_id = "fest_1"
@@ -171,7 +171,7 @@ class TestMqttTopicPublisher(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = TestMqttTopicPublisher()
+    node = SmoothPositionPublisher()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
