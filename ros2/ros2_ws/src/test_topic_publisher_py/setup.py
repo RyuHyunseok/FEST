@@ -21,7 +21,8 @@ setup(
     entry_points={
         'console_scripts': [
             'test_mqtt_topic_publisher = test_topic_publisher_py.test_mqtt_topic_publisher:main',
-            'test_odom_scan_publisher = test_topic_publisher_py.test_odom_scan_publisher:main',
+            'test_scan_topic_publisher = test_topic_publisher_py.test_scan_topic_publisher:main',
+            'test_turtlebot_status_topic_publisher = test_topic_publisher_py.test_turtlebot_status_topic_publisher:main',
         ],
     },
 )
