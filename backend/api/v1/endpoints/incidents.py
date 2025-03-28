@@ -25,8 +25,28 @@ def get_incidents(db: Session = Depends(get_db)):
     모든 화재 사고 목록 조회
     """
     incidents = db.query(Incident).all()
-    return incidents
-
+    
+    # 결과를 변환하여 반환
+    result = []
+    for incident in incidents:
+        # PostGIS 위치 데이터를 GeoJSON으로 변환
+        location_geojson = db.scalar(func.ST_AsGeoJSON(incident.location))
+        location_dict = json.loads(location_geojson)
+        
+        # 화재 정보를 딕셔너리로 변환
+        incident_dict = {
+            "incident_id": incident.incident_id,
+            "status": incident.status,
+            "detected_at": incident.detected_at,
+            "extinguished_at": incident.extinguished_at,
+            "location": {
+                "x": location_dict["coordinates"][0],
+                "y": location_dict["coordinates"][1]
+            }
+        }
+        result.append(incident_dict)
+    
+    return result
 @router.get("/active")
 def get_active_incidents(db: Session = Depends(get_db)):
     """
@@ -51,7 +71,24 @@ def get_incident(incident_id: str, db: Session = Depends(get_db)):
     incident = db.query(Incident).filter(Incident.incident_id == incident_id).first()
     if incident is None:
         raise HTTPException(status_code=404, detail="Incident not found")
-    return incident
+    
+    # PostGIS 위치 데이터를 GeoJSON으로 변환
+    location_geojson = db.scalar(func.ST_AsGeoJSON(incident.location))
+    location_dict = json.loads(location_geojson)
+    
+    # 화재 정보를 딕셔너리로 변환
+    incident_dict = {
+        "incident_id": incident.incident_id,
+        "status": incident.status,
+        "detected_at": incident.detected_at,
+        "extinguished_at": incident.extinguished_at,
+        "location": {
+            "x": location_dict["coordinates"][0],
+            "y": location_dict["coordinates"][1]
+        }
+    }
+    
+    return incident_dict
 
 
 

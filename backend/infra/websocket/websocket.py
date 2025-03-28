@@ -135,7 +135,7 @@ async def broadcast_robots_data():
                         except Exception as e:
                             print(f"Error sending to incidents client: {e}")
             
-            await asyncio.sleep(0.5)  # 0.5초마다 업데이트
+            await asyncio.sleep(0.05)  # 0.05초마다 업데이트
         
         except Exception as e:
             print(f"Error in broadcast task: {e}")
