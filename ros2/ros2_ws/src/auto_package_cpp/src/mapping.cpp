@@ -32,7 +32,10 @@
 
 // 전역 변수 선언 및 초기화
 std::string MAP_FILE = auto_package_cpp::create_file_path("auto_package_cpp", "path/map_save.pgm");
-const double M_PI = std::acos(-1);
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 const double MAP_WIDTH = 20.0;  // 맵의 너비 (미터)
 const double MAP_HEIGHT = 20.0; // 맵의 높이 (미터)

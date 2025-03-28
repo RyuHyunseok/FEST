@@ -33,7 +33,9 @@
 // using namespace 추가
 using namespace std::chrono_literals;
 
-const double M_PI = std::acos(-1);  // 파이 값
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 // 다익스트라 알고리즘을 위한 노드 정의
 struct DijkstraNode {
