@@ -1,3 +1,13 @@
+"""
+MQTT 명령어 구독자 노드
+
+이 노드는 MQTT를 통해 로봇에 대한 명령을 수신하고 처리합니다.
+주요 기능:
+- MQTT 브로커로부터 로봇 명령 수신
+- 명령 타입에 따른 처리 (move_to, extinguish 등)
+- 미션 ID와 화재 ID 추적
+"""
+
 import rclpy
 from rclpy.node import Node
 import paho.mqtt.client as mqtt
@@ -103,4 +113,4 @@ def main(args=None):
         rclpy.shutdown()
 
 if __name__ == '__main__':
-    main()
+    main() 

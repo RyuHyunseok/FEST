@@ -1,3 +1,12 @@
+"""
+ROS2 토픽과 MQTT 토픽 간의 변환 관계:
+
+ROS2 토픽                    ->  MQTT 토픽
+--------------------------------------------------------
+/robots/fest_1/position     ->  robots/fest_1/position
+                             (Pose -> {x, y, orientation})
+"""
+
 #!/usr/bin/env python3
 import rclpy
 from rclpy.node import Node

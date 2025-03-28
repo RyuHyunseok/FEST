@@ -1,49 +1,41 @@
-/*
- * Hybrid Goal Publisher Node
- * 
- * 기능:
- * - 자동/수동 모드 전환 가능한 목표점 발행
- * - 파일에서 읽은 경로의 목표점 자동 발행
- * - 사용자 입력을 통한 수동 목표점 발행
- * - 목표점 도달 감지 및 다음 목표점 발행
- * 
- * 토픽:
- * - 구독:
- *   - /odom: 로봇의 위치 정보
- * - 발행:
- *   - /goal_point: 목표점 정보
- */
-
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/point.hpp"
-#include "nav_msgs/msg/odometry.hpp"
+#include "std_msgs/msg/int32.hpp"
 #include <iostream>
 #include <string>
 #include <thread>
 #include <fstream>
 #include <vector>
-#include <cmath>
 #include "auto_package_cpp/file_path.hpp"
 
 // 전역 변수 선언 및 초기화
 std::string PATH_FILE = auto_package_cpp::create_file_path("auto_package_cpp", "path/hoom2_path.txt");
-const double GOAL_THRESHOLD = 0.35; // 목표점 도달 판단 거리 (미터)
 
 // 파일 경로를 상수로 정의
 // const std::string PATH_FILE = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\hoom2_path.txt)";
+
+enum RobotState {
+    DRIVING = 0,   // 주행 중
+    STOPPED = 1,   // 정지 상태
+    ARRIVED = 2,   // 목적지 도착
+    INITIALIZING = 3 // 초기화 상태
+};
 
 class GoalPublisher : public rclcpp::Node {
 public:
     GoalPublisher() : Node("goal_publisher"), 
                       current_path_index_(0), 
-                      auto_mode_(false) {
+                      auto_mode_(false),
+                      current_robot_state_(INITIALIZING),
+                      previous_robot_state_(INITIALIZING),
+                      arrived_handled_(false) {
         // 목표점 발행자 생성
         goal_pub_ = create_publisher<geometry_msgs::msg::Point>("/goal_point", 10);
 
-        // 로봇 위치 구독자 생성
-        odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
-            "odom", 10,
-            std::bind(&GoalPublisher::odom_callback, this, std::placeholders::_1));
+        // 로봇 상태 구독자 생성
+        robot_state_sub_ = create_subscription<std_msgs::msg::Int32>(
+            "robot_state", 10,
+            std::bind(&GoalPublisher::robot_state_callback, this, std::placeholders::_1));
 
         // 자동 경로 출판 타이머 (1초마다 확인)
         auto_publish_timer_ = create_wall_timer(
@@ -101,12 +93,6 @@ private:
         return true;
     }
 
-    double calculateDistance(const geometry_msgs::msg::Point& point1, const geometry_msgs::msg::Point& point2) {
-        double dx = point1.x - point2.x;
-        double dy = point1.y - point2.y;
-        return std::sqrt(dx*dx + dy*dy);
-    }
-
     void publish_next_goal() {
         if (path_points_.empty()) {
             RCLCPP_WARN(get_logger(), "No path points available. Loading path file...");
@@ -131,35 +117,47 @@ private:
         current_path_index_++;
     }
 
-    void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
-        if (!auto_mode_ || path_points_.empty()) {
-            return;
-        }
-
-        // 현재 로봇 위치
-        geometry_msgs::msg::Point current_pos;
-        current_pos.x = msg->pose.pose.position.x;
-        current_pos.y = msg->pose.pose.position.y;
-        current_pos.z = 0.0;
-
-        // 현재 목표점과의 거리 계산
-        double distance = calculateDistance(current_pos, path_points_[current_path_index_ - 1]);
-
-        // 로봇의 속도 확인
-        double linear_velocity = msg->twist.twist.linear.x;
-        double angular_velocity = msg->twist.twist.angular.z;
-
-        // 목표점 도달 여부 확인 (거리와 속도 조건)
-        if (distance <= GOAL_THRESHOLD && 
-            std::abs(linear_velocity) < 0.01 && 
-            std::abs(angular_velocity) < 0.01) {
-            RCLCPP_INFO(get_logger(), "Robot has arrived at destination");
-            publish_next_goal();
+    void robot_state_callback(const std_msgs::msg::Int32::SharedPtr msg) {
+        // 이전 상태를 저장
+        previous_robot_state_ = current_robot_state_;
+        
+        // 현재 상태 업데이트
+        current_robot_state_ = static_cast<RobotState>(msg->data);
+        
+        // 상태 변경 감지
+        if (previous_robot_state_ != current_robot_state_) {
+            // 상태가 변경되었을 때만 로그 출력
+            if (auto_mode_) {
+                switch (current_robot_state_) {
+                    case ARRIVED:
+                        RCLCPP_INFO(get_logger(), "Robot has arrived at destination");
+                        arrived_handled_ = false; // 새로운 도착 상태 처리 준비
+                        break;
+                    case STOPPED:
+                        RCLCPP_INFO(get_logger(), "Robot is stopped");
+                        break;
+                    case DRIVING:
+                        RCLCPP_INFO(get_logger(), "Robot is now driving");
+                        break;
+                    case INITIALIZING:
+                        RCLCPP_INFO(get_logger(), "Robot is initializing");
+                        break;
+                }
+            }
+            
+            // DRIVING이나 다른 상태로 변경되면 도착 처리 플래그 초기화
+            if (current_robot_state_ != ARRIVED) {
+                arrived_handled_ = false;
+            }
         }
     }
 
     void check_publish_next_goal() {
-        // 타이머는 유지하되, odom_callback에서 처리하도록 변경
+        if (auto_mode_ && current_robot_state_ == ARRIVED && !arrived_handled_) {
+            RCLCPP_INFO(get_logger(), "Auto mode: Robot arrived, publishing next goal");
+            publish_next_goal();
+            arrived_handled_ = true; // 현재 도착 상태에 대한 처리 완료 표시
+        }
     }
 
     void input_loop() {
@@ -168,24 +166,20 @@ private:
             std::string input;
             std::getline(std::cin, input);
 
-            // 특수 명령어 처리
             if (input == "q" || input == "Q") {
                 rclcpp::shutdown();
                 break;
             }
             
             if (input == "auto") {
-                if (!auto_mode_) {
-                    // 수동 모드에서 자동 모드로 전환
+                auto_mode_ = !auto_mode_;
+                if (auto_mode_) {
                     if (path_points_.empty()) {
                         load_path_from_file(PATH_FILE);
                     }
-                    auto_mode_ = true;
                     RCLCPP_INFO(get_logger(), "Auto mode enabled - will follow path automatically");
                     publish_next_goal();
                 } else {
-                    // 자동 모드에서 수동 모드로 전환
-                    auto_mode_ = false;
                     RCLCPP_INFO(get_logger(), "Auto mode disabled - manual input mode");
                 }
                 continue;
@@ -205,7 +199,6 @@ private:
                 continue;
             }
 
-            // 좌표 입력 처리
             try {
                 size_t space_pos = input.find(' ');
                 if (space_pos == std::string::npos) {
@@ -238,13 +231,16 @@ private:
     }
 
     rclcpp::Publisher<geometry_msgs::msg::Point>::SharedPtr goal_pub_;
-    rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+    rclcpp::Subscription<std_msgs::msg::Int32>::SharedPtr robot_state_sub_;
     rclcpp::TimerBase::SharedPtr auto_publish_timer_;
     std::thread input_thread_;
     
     std::vector<geometry_msgs::msg::Point> path_points_;
     size_t current_path_index_;
     bool auto_mode_;
+    RobotState current_robot_state_;
+    RobotState previous_robot_state_; // 이전 상태를 저장하기 위한 변수
+    bool arrived_handled_; // 도착 상태 처리 여부를 추적하는 플래그
 };
 
 int main(int argc, char** argv) {

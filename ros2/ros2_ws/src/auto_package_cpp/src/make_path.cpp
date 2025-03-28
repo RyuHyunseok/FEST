@@ -1,3 +1,18 @@
+/*
+ * Path Recording Node
+ * 
+ * 기능:
+ * - 로봇의 이동 경로를 실시간으로 기록
+ * - 일정 거리 간격으로 웨이포인트 저장
+ * - 기록된 경로를 파일로 저장
+ * 
+ * 토픽:
+ * - 구독:
+ *   - /odom: 로봇의 위치 정보
+ * - 발행:
+ *   - /global_path: 기록된 경로
+ */
+
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"

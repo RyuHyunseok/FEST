@@ -1,5 +1,19 @@
+/*
+ * Global Path Publisher Node
+ * 
+ * 기능:
+ * - 파일에서 읽은 경로를 주기적으로 발행
+ * - 로봇의 위치 정보를 모니터링
+ * 
+ * 토픽:
+ * - 구독:
+ *   - /odom: 로봇의 위치 정보
+ * - 발행:
+ *   - /global_path: 파일에서 읽은 전역 경로
+ */
+
 #include "rclcpp/rclcpp.hpp"
-#include "geometry_msgs/msg/twist.hpp"
+// #include "geometry_msgs/msg/twist.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"

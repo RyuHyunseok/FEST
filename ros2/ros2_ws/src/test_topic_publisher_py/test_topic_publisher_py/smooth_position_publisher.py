@@ -1,3 +1,14 @@
+"""
+MQTT 토픽 발행 테스트 노드
+
+이 노드는 MQTT를 통해 로봇의 위치와 상태를 시뮬레이션하여 발행합니다.
+주요 기능:
+- 로봇의 부드러운 이동 시뮬레이션
+- 배터리 상태 및 로봇 상태 발행
+- 화재 발생 시뮬레이션 및 화재 진압 작업 시뮬레이션
+- 미션 상태 업데이트
+"""
+
 import rclpy
 from rclpy.node import Node
 import paho.mqtt.client as mqtt

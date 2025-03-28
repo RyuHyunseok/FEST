@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
+  <name>topic_bridge_py</name>
+  <version>0.0.0</version>
+  <description>TODO: Package description</description>
+  <maintainer email="ehddnr0929@naver.com">SSAFY</maintainer>
+  <license>TODO: License declaration</license>
+
+  <!-- 빌드 도구 -->
+  <buildtool_depend>ament_python</buildtool_depend>
+
+  <!-- ROS2 핵심 의존성 -->
+  <depend>rclpy</depend>  <!-- ROS2 Python 클라이언트 라이브러리 -->
+
+  <!-- ROS2 메시지 타입 의존성 -->
+  <depend>std_msgs</depend>      <!-- 기본 메시지 타입 (String, Float32 등) -->
+  <depend>geometry_msgs</depend> <!-- 위치 관련 메시지 타입 (Pose2D, Point 등) -->
+  <depend>diagnostic_msgs</depend> <!-- 로봇 상태 진단 메시지 타입 -->
+
+  <!-- 외부 통신 의존성 -->
+  <depend>python3-paho-mqtt</depend> <!-- MQTT 통신을 위한 Python 클라이언트 -->
+
+  <!-- 테스트 도구 의존성 -->
+  <test_depend>ament_copyright</test_depend>  <!-- 저작권 검사 도구 -->
+  <test_depend>ament_flake8</test_depend>     <!-- Python 코드 스타일 검사 도구 -->
+  <test_depend>ament_pep257</test_depend>     <!-- Python 문서화 검사 도구 -->
+  <test_depend>python3-pytest</test_depend>    <!-- Python 테스트 프레임워크 -->
+
+  <export>
+    <build_type>ament_python</build_type>
+  </export>
+</package>

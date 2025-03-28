@@ -1,20 +1,3 @@
-/*
- * Local Dijkstra Path Planner Node
- * 
- * 기능:
- * - 다익스트라 알고리즘을 사용하여 로컬 경로 계획
- * - 전역 경로를 기반으로 로컬 경로 생성
- * - 장애물 회피를 위한 실시간 경로 재계획
- * 
- * 토픽:
- * - 구독:
- *   - /global_path: 전역 경로
- *   - /local_cost_map: 로컬 비용 맵
- *   - /odom: 로봇의 위치 정보
- * - 발행:
- *   - /local_path: 계획된 로컬 경로
- */
-
 #include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"

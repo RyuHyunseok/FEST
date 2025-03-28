@@ -1,29 +1,10 @@
-﻿/*
- * Global Dijkstra Path Planner Node
- * 
- * 기능:
- * - 다익스트라 알고리즘을 사용하여 전역 경로 계획
- * - 비용 맵을 기반으로 최적의 경로 생성
- * - MQTT를 통한 목표점 수신
- * 
- * 토픽:
- * - 구독:
- *   - /cost_map: 비용 맵 데이터
- *   - /odom: 로봇의 위치 정보
- *   - /goal_point: 목표점 정보
- * - 발행:
- *   - /global_path: 계획된 전역 경로
- *   - /visualization_marker_array: 경로 시각화 마커
- */
-
-#include "rclcpp/rclcpp.hpp"
+﻿#include "rclcpp/rclcpp.hpp"
 #include "nav_msgs/msg/occupancy_grid.hpp"
 #include "nav_msgs/msg/path.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/point.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include "auto_package_cpp/mqtt_handler.hpp"
 #include <queue>
 #include <vector>
 #include <cmath>
@@ -32,6 +13,10 @@
 #include <unordered_map>
 
 const double M_PI = std::acos(-1);
+
+// #ifndef M_PI
+// #define M_PI 3.14159265358979323846
+// #endif
 
 struct DijkstraNode {
     int x, y;
@@ -59,36 +44,10 @@ public:
         map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
             "/cost_map", 1, std::bind(&DijkstraPlanner::map_callback, this, std::placeholders::_1));
         
-        // =============================================
-        // MQTT 핸들러 초기화 및 설정
-        // =============================================
-        
-        // MQTT 브로커 연결 설정 (localhost:1883)
-        mqtt_handler_ = std::make_unique<MqttHandler>("localhost", 1883);
-        
-        // MQTT 연결 시도 및 콜백 설정
-        if (mqtt_handler_->connect()) {
-            // 목표점 수신 시 실행될 콜백 함수 설정
-            mqtt_handler_->set_goal_callback([this](double x, double y) {
-                // 수신된 좌표를 geometry_msgs::Point 메시지로 변환
-                geometry_msgs::msg::Point goal_point;
-                goal_point.x = x;
-                goal_point.y = y;
-                // goal_callback 함수 호출하여 경로 계획 시작
-                goal_callback(std::make_shared<geometry_msgs::msg::Point>(goal_point));
-            });
-            RCLCPP_INFO(get_logger(), "MQTT handler initialized successfully");
-        } else {    // MQTT 연결 실패 시 대체 처리
-            // ROS2 토픽을 통한 목표점 수신 설정
-            goal_sub_ = create_subscription<geometry_msgs::msg::Point>(
-                "/goal_point", 10,
-                std::bind(&DijkstraPlanner::goal_callback, this, std::placeholders::_1));
-            RCLCPP_WARN(get_logger(), "MQTT connection failed, using ROS2 topic /goal_point");
-        }
-
-        // =============================================
-        // MQTT 또는 ROS2 토픽을 통한 목표점 수신 설정 종료
-        // =============================================
+        // 목표점 구독자 추가
+        goal_sub_ = create_subscription<geometry_msgs::msg::Point>(
+            "/goal_point", 10,
+            std::bind(&DijkstraPlanner::goal_callback, this, std::placeholders::_1));
 
         // 로봇의 실제 위치를 받기 위한 구독자 추가
         odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
@@ -104,11 +63,10 @@ public:
 private:
     // 클래스 멤버 변수 선언
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
-    rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr goal_sub_;  // ROS2 토픽 구독자
+    rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr goal_sub_;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
-    std::unique_ptr<MqttHandler> mqtt_handler_;
     nav_msgs::msg::OccupancyGrid map_;
     bool has_map_;
     bool has_robot_pose_;
