@@ -51,37 +51,37 @@ include_directories(include)
 # MQTT 라이브러리 설정
 #=============================================================================
 # Windows 환경에서 mosquitto 라이브러리 경로 설정
-if(WIN32)
-  if(DEFINED ENV{MOSQUITTO_DIR})
-    if(EXISTS "$ENV{MOSQUITTO_DIR}/devel")
-      set(MOSQUITTO_DIR "$ENV{MOSQUITTO_DIR}/devel")
-    else()
-      set(MOSQUITTO_DIR $ENV{MOSQUITTO_DIR})
-    endif()
-  else()
-    set(POSSIBLE_PATHS
-      "C:/Program Files/mosquitto/devel"
-      "C:/Program Files (x86)/mosquitto/devel"
-      "C:/mosquitto/devel"
-      "${CMAKE_CURRENT_SOURCE_DIR}/mosquitto/devel"
-      "C:/Program Files/mosquitto"
-      "C:/Program Files (x86)/mosquitto"
-      "C:/mosquitto"
-      "C:/opt/mosquitto"
-      "C:/opt/mosquitto/devel"
-      "C:/msys64/mingw64/include"
-      "C:/msys64/mingw64/lib"
-      "C:/msys64/mingw64"
-    )
+# if(WIN32)
+#   if(DEFINED ENV{MOSQUITTO_DIR})
+#     if(EXISTS "$ENV{MOSQUITTO_DIR}/devel")
+#       set(MOSQUITTO_DIR "$ENV{MOSQUITTO_DIR}/devel")
+#     else()
+#       set(MOSQUITTO_DIR $ENV{MOSQUITTO_DIR})
+#     endif()
+#   else()
+#     set(POSSIBLE_PATHS
+#       "C:/Program Files/mosquitto/devel"
+#       "C:/Program Files (x86)/mosquitto/devel"
+#       "C:/mosquitto/devel"
+#       "${CMAKE_CURRENT_SOURCE_DIR}/mosquitto/devel"
+#       "C:/Program Files/mosquitto"
+#       "C:/Program Files (x86)/mosquitto"
+#       "C:/mosquitto"
+#       "C:/opt/mosquitto"
+#       "C:/opt/mosquitto/devel"
+#       "C:/msys64/mingw64/include"
+#       "C:/msys64/mingw64/lib"
+#       "C:/msys64/mingw64"
+#     )
 
-    foreach(PATH ${POSSIBLE_PATHS})
-      if(EXISTS "${PATH}/mosquitto.h")
-        set(MOSQUITTO_DIR ${PATH})
-        break()
-      endif()
-    endforeach()
-  endif()
-endif()
+#     foreach(PATH ${POSSIBLE_PATHS})
+#       if(EXISTS "${PATH}/mosquitto.h")
+#         set(MOSQUITTO_DIR ${PATH})
+#         break()
+#       endif()
+#     endforeach()
+#   endif()
+# endif()
 
 #=============================================================================
 # 유틸리티 라이브러리 생성
@@ -94,24 +94,24 @@ target_include_directories(file_path PUBLIC
 ament_target_dependencies(file_path "ament_index_cpp")
 
 # MQTT 통신 처리 라이브러리
-add_library(mqtt_handler src/utils/mqtt_handler.cpp)
-target_include_directories(mqtt_handler PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
+# add_library(mqtt_handler src/utils/mqtt_handler.cpp)
+# target_include_directories(mqtt_handler PUBLIC
+#   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+#   $<INSTALL_INTERFACE:include>)
 
 # MQTT 라이브러리 링크 설정
-if(WIN32)
-  target_include_directories(mqtt_handler PRIVATE 
-    "${MOSQUITTO_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include")
-  target_link_directories(mqtt_handler PRIVATE "${MOSQUITTO_DIR}")
-  target_link_libraries(mqtt_handler mosquitto)
-else()
-  find_package(PkgConfig REQUIRED)
-  pkg_check_modules(MOSQUITTO REQUIRED mosquitto)
-  target_include_directories(mqtt_handler PRIVATE ${MOSQUITTO_INCLUDE_DIRS})
-  target_link_libraries(mqtt_handler ${MOSQUITTO_LIBRARIES})
-endif()
+# if(WIN32)
+#   target_include_directories(mqtt_handler PRIVATE 
+#     "${MOSQUITTO_DIR}"
+#     "${CMAKE_CURRENT_SOURCE_DIR}/include")
+#   target_link_directories(mqtt_handler PRIVATE "${MOSQUITTO_DIR}")
+#   target_link_libraries(mqtt_handler mosquitto)
+# else()
+#   find_package(PkgConfig REQUIRED)
+#   pkg_check_modules(MOSQUITTO REQUIRED mosquitto)
+#   target_include_directories(mqtt_handler PRIVATE ${MOSQUITTO_INCLUDE_DIRS})
+#   target_link_libraries(mqtt_handler ${MOSQUITTO_LIBRARIES})
+# endif()
 
 #=============================================================================
 # ROS2 노드 실행 파일 생성
@@ -170,20 +170,20 @@ ament_target_dependencies(global_dijkstra_path
   "visualization_msgs")
 
 # MQTT 통신을 위한 설정
-if(WIN32)
-  target_include_directories(global_dijkstra_path PRIVATE 
-    "${MOSQUITTO_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/include")
-  target_link_directories(global_dijkstra_path PRIVATE "${MOSQUITTO_DIR}")
-  target_link_libraries(global_dijkstra_path
-    mqtt_handler
-    file_path
-    mosquitto)
-else()
-  target_link_libraries(global_dijkstra_path
-    mqtt_handler
-    file_path)
-endif()
+# if(WIN32)
+#   target_include_directories(global_dijkstra_path PRIVATE 
+#     "${MOSQUITTO_DIR}"
+#     "${CMAKE_CURRENT_SOURCE_DIR}/include")
+#   target_link_directories(global_dijkstra_path PRIVATE "${MOSQUITTO_DIR}")
+#   target_link_libraries(global_dijkstra_path
+#     mqtt_handler
+#     file_path
+#     mosquitto)
+# else()
+#   target_link_libraries(global_dijkstra_path
+#     mqtt_handler
+#     file_path)
+# endif()
 
 # 7. local_dijkstra_path: 지역 다익스트라 경로 계획 노드
 add_executable(local_dijkstra_path src/2_local_dijkstra_path.cpp)
@@ -262,7 +262,7 @@ target_link_libraries(goal_publisher_auto file_path)
 # 실행 파일 설치 설정
 install(TARGETS 
   file_path
-  mqtt_handler
+  # mqtt_handler
   odom_node
   global_cost_map_generator
   local_cost_map_generator
