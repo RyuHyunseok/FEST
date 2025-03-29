@@ -36,7 +36,7 @@ find_package(std_msgs REQUIRED)
 # find_package(nlohmann_json REQUIRED)
 
 # 커스텀 메시지 및 네비게이션 관련 패키지
-find_package(ssafy_msgs REQUIRED)
+# find_package(ssafy_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -117,10 +117,10 @@ ament_target_dependencies(file_path "ament_index_cpp")
 # ROS2 노드 실행 파일 생성
 #=============================================================================
 # 1. odom_node: 로봇의 위치 정보를 발행하는 노드
-add_executable(odom_node src/1_odom_node.cpp)
+add_executable(odom_node src/1_odom_unity.cpp)
 ament_target_dependencies(odom_node
   "rclcpp"
-  "ssafy_msgs"
+  # "ssafy_msgs"
   "nav_msgs"
   "geometry_msgs"
   "tf2_ros")
@@ -157,8 +157,8 @@ ament_target_dependencies(local_path_planner
   "geometry_msgs"
   "sensor_msgs"
   "tf2_ros"
-  "visualization_msgs"
-  "ssafy_msgs")
+  # "ssafy_msgs"
+  "visualization_msgs")
 
 # 6. global_dijkstra_path: 전역 다익스트라 경로 계획 노드
 add_executable(global_dijkstra_path src/2_global_dijkstra_path.cpp)
@@ -166,7 +166,7 @@ ament_target_dependencies(global_dijkstra_path
   "rclcpp"
   "nav_msgs"
   "geometry_msgs"
-  "ssafy_msgs"
+  # "ssafy_msgs"
   "visualization_msgs")
 
 # MQTT 통신을 위한 설정
@@ -194,12 +194,12 @@ ament_target_dependencies(local_dijkstra_path
   "tf2_ros")
 
 # 8. follow_the_carrot: carrot following 알고리즘 구현 노드
-add_executable(follow_the_carrot src/3_follow_the_carrot.cpp)
+add_executable(follow_the_carrot src/3_follow_unity.cpp)
 ament_target_dependencies(follow_the_carrot
   "rclcpp"
   "nav_msgs"
   "geometry_msgs"
-  "ssafy_msgs"
+  # "ssafy_msgs"
   # "sensor_msgs"
   "tf2_ros")
 
