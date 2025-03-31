@@ -409,6 +409,35 @@
         </v-card>
       </v-dialog>
     </div>
+
+
+    <!-- 화재 경고 다이얼로그 -->
+  <alert-dialog
+    v-model="showFireAlert"
+    title="화재 경고!"
+    icon="mdi-fire-alert"
+    content-icon="mdi-fire"
+    color="error"
+    heading="화재가 발생했습니다!"
+    message="시스템에서 새로운 화재가 감지되었습니다."
+    button-text="확인"
+    @confirm="onFireAlertConfirm"
+  />
+  
+  <!-- 침입자 경고 다이얼로그 -->
+  <alert-dialog
+    v-model="showProwlerAlert"
+    title="침입자 경고!"
+    icon="mdi-alert-circle"
+    content-icon="mdi-account-alert"
+    color="warning"
+    heading="침입자가 감지되었습니다!"
+    message="시스템에서 새로운 침입자가 감지되었습니다."
+    button-text="확인"
+    @confirm="onProwlerAlertConfirm"
+  />
+
+
   </template>
   
   <script>
@@ -420,7 +449,8 @@ import StatusBadge from '../components/common/StatusBadge.vue';
   
   import { robotService, incidentService } from '../services/api';
   import wsService from '../services/websocket';
-  
+  import AlertDialog from '../components/common/AlertDialog.vue';
+
   export default {
     name: 'Dashboard',
     components: {
@@ -428,7 +458,8 @@ import StatusBadge from '../components/common/StatusBadge.vue';
       Topbar,
       MapViewer,
       AlertBox,
-      StatusBadge
+      StatusBadge,
+      AlertDialog
     },
     data() {
       return {
@@ -452,7 +483,15 @@ import StatusBadge from '../components/common/StatusBadge.vue';
           y: 0
         },
         // 구독 해제 함수
-        unsubscribeCallbacks: []
+        unsubscribeCallbacks: [],
+        showFireAlert: false,
+        showProwlerAlert: false,
+        currentFireId: null,
+        currentProwlerId: null,
+
+        // 이미 알림을 표시한 ID 추적
+        notifiedFireIds: new Set(),
+        notifiedProwlerIds: new Set()
       };
     },
     computed: {
@@ -581,7 +620,23 @@ import StatusBadge from '../components/common/StatusBadge.vue';
             this.robots = data.robots;
           }
           if (data.prowlers) {
-            this.prowlers = data.prowlers;
+            // 새로운 침입자 감지 로직
+      const newProwlers = { ...data.prowlers };
+      const oldProwlers = { ...this.prowlers };
+      
+      // 이전에 없던 새 침입자 찾기
+      Object.keys(newProwlers).forEach(id => {
+        if (!oldProwlers[id] && !this.notifiedProwlerIds.has(id)) {
+          // 새 침입자 발생 알림 표시
+          this.currentProwlerId = id;
+          this.showProwlerAlert = true;
+          this.notifiedProwlerIds.add(id); // 알림 표시 기록
+          
+        }
+      });
+      
+      // 침입자 데이터 업데이트
+      this.prowlers = newProwlers;
           }
         });
         this.unsubscribeCallbacks.push(unsubscribeRobots);
@@ -589,8 +644,25 @@ import StatusBadge from '../components/common/StatusBadge.vue';
         // 화재 데이터 콜백 등록
         const unsubscribeIncidents = wsService.onIncidentsData(data => {
           if (data.incidents) {
-            // console.log('새로운 화재 데이터 수신:', data.incidents);
-            this.incidents = data.incidents;
+            // 새로운 화재 감지 로직
+      const newIncidents = { ...data.incidents };
+      const oldIncidents = { ...this.incidents };
+      
+      // 활성 상태이고 이전에 없던 새 화재 찾기
+      Object.keys(newIncidents).forEach(id => {
+        if (newIncidents[id].status === 'active' && 
+            (!oldIncidents[id] || oldIncidents[id].status !== 'active') && 
+            !this.notifiedFireIds.has(id)) {
+          // 새 화재 발생 알림 표시
+          this.currentFireId = id;
+          this.showFireAlert = true;
+          this.notifiedFireIds.add(id); // 알림 표시 기록
+          
+        }
+      });
+      
+      // 화재 데이터 업데이트
+      this.incidents = newIncidents;
           }
         });
         this.unsubscribeCallbacks.push(unsubscribeIncidents);
