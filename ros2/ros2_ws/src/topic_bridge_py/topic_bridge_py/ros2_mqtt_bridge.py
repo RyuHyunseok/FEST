@@ -14,6 +14,7 @@ import json
 import paho.mqtt.client as mqtt
 from geometry_msgs.msg import Pose
 import math
+from std_msgs.msg import String
 
 class ROS2ToMQTTBridge(Node):
     def __init__(self):
@@ -41,6 +42,13 @@ class ROS2ToMQTTBridge(Node):
             Pose,
             f'/robots/{self.robot_id}/position',
             self.position_callback,
+            10  # QoS 프로파일
+        )
+
+        self.fire_subscription = self.create_subscription(
+            String,
+            '/incidents/new',  # ROS2 토픽 경로
+            self.fire_callback,
             10  # QoS 프로파일
         )
         
@@ -102,6 +110,38 @@ class ROS2ToMQTTBridge(Node):
         except Exception as e:
             self.get_logger().error(f'Error processing position data: {e}')
     
+    def fire_callback(self, msg):
+        """ROS2 화재 발생 토픽 메시지 수신 시 호출되는 콜백"""
+        try:
+            # 메시지에서 JSON 데이터 파싱
+            fire_data = json.loads(msg.data)
+            
+            # 위치 데이터 형식 확인 및 조정
+            if 'location' in fire_data and isinstance(fire_data['location'], dict):
+                location = fire_data['location']
+                
+                # Unity에서 전송된 x, z 좌표 사용
+                if 'x' in location and 'z' in location:
+                    unity_x = float(location['x'])
+                    unity_z = float(location['z'])
+                    
+                    # 로봇 위치와 동일한 형식으로 매핑 (x, y 속성만 사용)
+                    new_location = {
+                        "x": round(unity_x, 2),  # 화재의 x 좌표 그대로 사용
+                        "y": round(unity_z, 2)   # 화재의 z 좌표를 y 좌표로 사용
+                    }
+                    
+                    # 새 location으로 교체
+                    fire_data['location'] = new_location
+            
+            # 변환된 데이터를 JSON으로 다시 직렬화
+            mqtt_msg = json.dumps(fire_data)
+            self.mqtt_client.publish("incidents/new", mqtt_msg)
+            
+            self.get_logger().info(f'Published fire incident to MQTT: {fire_data}')
+        except Exception as e:
+            self.get_logger().error(f'Error processing fire incident data: {e}')
+
     def on_shutdown(self):
         """노드 종료 시 호출될 메소드"""
         self.get_logger().info("Shutting down ROS2 to MQTT bridge...")

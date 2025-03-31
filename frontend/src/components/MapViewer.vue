@@ -49,9 +49,9 @@ export default {
     prowlers: {
       deep: true,
       handler(newProwlers, oldProwlers) {
-    console.log('침입자 데이터 변경 감지:', 
-      '새로운 침입자 수:', Object.keys(newProwlers).length, 
-      '이전 침입자 수:', oldProwlers ? Object.keys(oldProwlers).length : 0);
+    // console.log('침입자 데이터 변경 감지:', 
+    //   '새로운 침입자 수:', Object.keys(newProwlers).length, 
+    //   '이전 침입자 수:', oldProwlers ? Object.keys(oldProwlers).length : 0);
     this.updateProwlers(newProwlers);
   }
     }
@@ -269,6 +269,9 @@ if (this.forceRender) {
     // 화재 관련 메서드
 
     createIncidentMesh(incidentId, location) {
+
+      console.log('화재 생성 시작 ', incidentId, '위치: ', location);
+
   // 화재 효과 그룹
   const fireGroup = new THREE.Group();
   
@@ -307,9 +310,18 @@ if (this.forceRender) {
   smallFlame.position.y = 4; // 중심 높이 위
   fireGroup.add(smallFlame);
   
-  // 좌표 설정 (Unity 좌표계를 Three.js 좌표계로 변환)
-  fireGroup.position.set(location.y, 0, location.x);
-  
+// 위치 설정 (90도 반시계방향 회전 적용)
+console.log('화재 위치 계산 전:', location.x, location.y);
+  const posX = -location.x;  // 회전 적용
+  const posZ = location.y;   // 회전 적용
+  console.log('화재 위치 계산 후:', posX, 0, posZ);
+
+
+  // 위치 적용
+  fireGroup.position.set(posX, 0, posZ);
+  console.log('화재 그룹 최종 위치:', fireGroup.position.x, fireGroup.position.y, fireGroup.position.z);
+
+
   // 씬에 추가
   this.scene.add(fireGroup);
   
@@ -328,18 +340,15 @@ updateIncidents(incidents) {
   
   // 현재 화재 ID 목록
   const currentIncidentIds = Object.keys(incidents);
-  // console.log('현재 화재 ID들:', currentIncidentIds);
-  // console.log('현재 맵에 있는 화재 ID들:', Object.keys(this.incidentMeshes));
-  
+
   // 먼저 extinguished 상태의 화재 제거
   currentIncidentIds.forEach(incidentId => {
     const incidentData = incidents[incidentId];
-    // console.log(`화재 ID ${incidentId} 상태:`, incidentData.status);
 
     // extinguished 상태면 화재 제거
     if (incidentData.status === 'extinguished') {
       if (this.incidentMeshes[incidentId]) {
-        // console.log(`화재 ID ${incidentId} 제거 시도`);
+
         try {
           // 화재 메시 참조 저장
           const meshToRemove = this.incidentMeshes[incidentId].mesh;
@@ -347,8 +356,7 @@ updateIncidents(incidents) {
           // 씬에서 제거
           if (meshToRemove) {
             this.scene.remove(meshToRemove);
-            // console.log(`화재 ID ${incidentId} 씬에서 제거 성공`);
-            
+
             // 메모리 해제
             if (meshToRemove.geometry) meshToRemove.geometry.dispose();
             if (meshToRemove.material) {
@@ -396,13 +404,24 @@ updateIncidents(incidents) {
     
     // 화재가 맵에 없으면 새로 생성
     if (!this.incidentMeshes[incidentId]) {
-      // console.log(`새 화재 ID ${incidentId} 생성`);
+
+      console.log(`새 화재 ID ${incidentId} 생성, 위치:`, incidentData.location);
+
       this.createIncidentMesh(incidentId, incidentData.location);
     } else {
       // 위치만 업데이트
-      // console.log(`화재 ID ${incidentId} 위치 업데이트`);
+      // console.log(`화재 ID ${incidentId} 위치 업데이트, 이전:`, this.incidentMeshes[incidentId].mesh.position);
       const incidentMesh = this.incidentMeshes[incidentId].mesh;
-      incidentMesh.position.set(incidentData.location.y, 0, incidentData.location.x);
+
+
+
+      // 회전 적용한 위치 계산
+  const posX = -incidentData.location.x;
+  const posZ = incidentData.location.y;
+  // console.log(`화재 ID ${incidentId} 새 위치 계산:`, posX, 0, posZ);
+  
+  incidentMesh.position.set(posX, 0, posZ);
+  // console.log(`화재 ID ${incidentId} 위치 업데이트 후:`, incidentMesh.position);
     }
   });
   
@@ -449,15 +468,15 @@ createProwlerMesh(prowlerId, location) {
   updateProwlers(prowlers) {
     if (!this.scene) return;
 
-    console.log('updateProwlers 호출됨:', prowlers);
-    console.log('현재 맵에 표시된 침입자:', Object.keys(this.prowlerMeshes));
+    // console.log('updateProwlers 호출됨:', prowlers);
+    // console.log('현재 맵에 표시된 침입자:', Object.keys(this.prowlerMeshes));
     
     // 현재 침입자 ID 목록
     const currentProwlerIds = Object.keys(prowlers);
     
     Object.keys(this.prowlerMeshes).forEach(prowlerId => {
     if (!currentProwlerIds.includes(prowlerId)) {
-      console.log(`침입자 ID ${prowlerId} 제거 시도`);
+      // console.log(`침입자 ID ${prowlerId} 제거 시도`);
       
       try {
         // 씬에서 메시 제거
