@@ -153,7 +153,7 @@
               <v-divider></v-divider>
               
               <v-card-text>
-                <MapViewer :robots="robots" :incidents="incidents"/>
+                <MapViewer :robots="robots" :incidents="incidents" :prowlers="prowlers"/>
               </v-card-text>
             </v-card>
           </v-col>
@@ -443,6 +443,7 @@ import StatusBadge from '../components/common/StatusBadge.vue';
         robots: {},
         incidents: {},
         robotList: [],
+        prowlers: {},
         selectedRobotId: null,
         showMoveCommandDialog: false,
         showExtinguishDialog: false,
@@ -578,6 +579,9 @@ import StatusBadge from '../components/common/StatusBadge.vue';
         const unsubscribeRobots = wsService.onRobotsData(data => {
           if (data.robots) {
             this.robots = data.robots;
+          }
+          if (data.prowlers) {
+            this.prowlers = data.prowlers;
           }
         });
         this.unsubscribeCallbacks.push(unsubscribeRobots);

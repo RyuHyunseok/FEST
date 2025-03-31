@@ -118,6 +118,11 @@ def on_message(client, userdata, msg):
                 # 데이터베이스에 미션 상태 업데이트
                 update_mission_status(mission_id, message)
 
+        elif topic == "prowler/new":
+            # redis에 침입자 정보 저장
+            prowler_id = message.get("prowler_id", f"prowler_{uuid.uuid4().hex[:8]}")
+            redis_client.set(f"prowler:{prowler_id}", json.dumps(message), ex=30) # 30초 후 자동 삭제
+
     except Exception as e:
         print(f"Error processing message: {e}")
 
@@ -349,10 +354,10 @@ def start_mqtt_listener():
     # 메시지 구독
     _mqtt_client.subscribe("robots/+/position")  # 모든 로봇 위치 정보 (+ 는 와일드카드)
     _mqtt_client.subscribe("robots/+/status")    # 모든 로봇 상태 정보
-    _mqtt_client.subscribe("incidents/new")       # 새 화재 발생 정보
+    _mqtt_client.subscribe("incidents/new")      # 새 화재 발생 정보
     _mqtt_client.subscribe("incidents/+/status") # 모든 화재 상태 정보
     _mqtt_client.subscribe("mission/+/update")   # 모든 미션 상태 업데이트
-
+    _mqtt_client.subscribe("prowler/new")        # 침입자 발생 정보보
 
     _mqtt_client.loop_start()  # 비동기 구독 시작
     print("MQTT 리스너가 시작되었습니다.")
