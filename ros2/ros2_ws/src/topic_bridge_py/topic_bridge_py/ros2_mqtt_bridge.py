@@ -28,6 +28,7 @@ class ROS2ToMQTTBridge(Node):
         self.mqtt_client = mqtt.Client()
         self.mqtt_client.on_connect = self.on_connect
         self.position_topic = f"robots/{self.robot_id}/position"
+        self.robot_status_topic = f"robots/{self.robot_id}/status"
         
         # MQTT 브로커 연결
         try:
@@ -43,6 +44,13 @@ class ROS2ToMQTTBridge(Node):
             f'/robots/{self.robot_id}/position',
             self.position_callback,
             10  # QoS 프로파일
+        )
+
+        self.subscription = self.create_subscription(
+            String,
+            f'/robots/{self.robot_id}/status',
+            self.robot_status_callback,
+            10
         )
 
         self.fire_subscription = self.create_subscription(
@@ -66,7 +74,7 @@ class ROS2ToMQTTBridge(Node):
     def on_connect(self, client, userdata, flags, rc):
         """MQTT 연결 성공 시 호출될 콜백"""
         self.get_logger().info(f"Connected to MQTT broker with result code: {rc}")
-    
+
     def check_connection(self):
         """정기적으로 MQTT 연결 상태 확인"""
         if self.mqtt_client.is_connected():
@@ -118,6 +126,31 @@ class ROS2ToMQTTBridge(Node):
         except Exception as e:
             self.get_logger().error(f'Error processing position data: {e}')
     
+    def robot_status_callback(self, msg):
+
+        try: 
+            status_data = json.loads(msg.data) # json 역직렬화
+
+            # status_data 에서 원하는 정보만 추출
+            robot_id = status_data['robot_id']
+            battery = status_data['battery']
+            water = status_data['water']
+
+            status_info = {
+                'battery': battery,
+                'water': water
+            }
+
+            # 해당 정보 직렬화
+            serialized_status_info = json.dumps(status_info)
+
+            # 직렬화된 json mqtt 브로커로 publish
+            self.mqtt_client.publish(self.robot_status_topic, serialized_status_info)
+
+            self.get_logger().info(f'Published status to MQTT:  {status_info}')
+        except Exception as e:
+            self.get_logger().error(f'Error processing status data: {e}')
+
     def fire_callback(self, msg):
         """ROS2 화재 발생 토픽 메시지 수신 시 호출되는 콜백"""
         try:
@@ -159,7 +192,7 @@ class ROS2ToMQTTBridge(Node):
             # incident_id 확인
             if 'incident_id' in status_data:
                 incident_id = status_data['incident_id']
-                    
+
                 # 동적으로 MQTT 토픽 생성
                 mqtt_topic = f"incidents/{incident_id}/status"
                 
