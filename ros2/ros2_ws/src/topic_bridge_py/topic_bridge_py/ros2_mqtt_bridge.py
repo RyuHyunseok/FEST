@@ -51,6 +51,14 @@ class ROS2ToMQTTBridge(Node):
             self.fire_callback,
             10  # QoS 프로파일
         )
+
+                # 화재 상태 업데이트 구독
+        self.fire_status_subscription = self.create_subscription(
+            String,
+            '/incidents/status',  # ROS2 토픽 경로
+            self.fire_status_callback,
+            10  # QoS 프로파일
+        )
         
         # 타이머 설정 (MQTT 연결 상태 체크)
         self.timer = self.create_timer(5.0, self.check_connection)
@@ -141,6 +149,31 @@ class ROS2ToMQTTBridge(Node):
             self.get_logger().info(f'Published fire incident to MQTT: {fire_data}')
         except Exception as e:
             self.get_logger().error(f'Error processing fire incident data: {e}')
+
+    def fire_status_callback(self, msg):
+        """ROS2 화재 상태 업데이트 토픽 메시지 수신 시 호출되는 콜백"""
+        try:
+            # 메시지에서 JSON 데이터 파싱
+            status_data = json.loads(msg.data)
+            
+            # incident_id 확인
+            if 'incident_id' in status_data:
+                incident_id = status_data['incident_id']
+                    
+                # 동적으로 MQTT 토픽 생성
+                mqtt_topic = f"incidents/{incident_id}/status"
+                
+                # 데이터를 JSON으로 직렬화하여 MQTT로 발행
+                mqtt_msg = json.dumps(status_data)
+                self.mqtt_client.publish(mqtt_topic, mqtt_msg)
+                
+                self.get_logger().info(f'Published fire status update to MQTT: {mqtt_topic} - {status_data}')
+            else:
+                self.get_logger().warn(f'Missing incident_id in fire status update: {status_data}')
+                
+        except Exception as e:
+            self.get_logger().error(f'Error processing fire status update: {e}')
+
 
     def on_shutdown(self):
         """노드 종료 시 호출될 메소드"""
