@@ -67,7 +67,7 @@ def on_message(client, userdata, msg):
                 
                 # Redis에 최신 상태 저장 (로봇별)
                 redis_client.set(f"robot:{robot_id}:status", json.dumps(message))
-                
+                print('redis에 저장ㅁㅎㅁ')
                 # 참고: 상태 정보는 Redis에만 저장하고 PostgreSQL에는 저장하지 않음
                 # 실시간 모니터링에만 사용하므로 영구 저장은 하지 않음
         
@@ -224,7 +224,30 @@ def create_new_incident(incident_id, incident_data):
                     # MQTT로 로봇에게 명령 publish
                     _mqtt_client.publish(f'robots/{robot_id}/command', json.dumps(command))
                     print(f'화재 발생: 로봇 {robot_id}에게 미션 {mission_id} 할당')
-        
+
+                    # 로봇 상태 업데이트 (PostgreSQL)
+                    robot = db.query(Robot).filter(Robot.robot_id == robot_id).first()
+                    if robot:
+                        robot.status = "on_mission"
+                        
+                    # 로봇 상태 업데이트 (Redis - 실시간 표시용)
+                    robot_status = {
+                        "status": "on_mission"
+                    }
+                        
+                    # 기존 상태 정보 유지 (배터리 등)
+                    existing_status = redis_client.get(f"robot:{robot_id}:status")
+                    if existing_status:
+                        try:
+                            existing_data = json.loads(existing_status)
+                            for key in existing_data:
+                                if key != "status":
+                                    robot_status[key] = existing_data[key]
+                        except:
+                            pass
+                            
+                    redis_client.set(f"robot:{robot_id}:status", json.dumps(robot_status))
+
         db.commit()
         print(f"새로운 화재 db 저장완료: {incident}")
         return True

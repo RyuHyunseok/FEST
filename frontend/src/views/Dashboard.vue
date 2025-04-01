@@ -239,16 +239,56 @@
                 
                 <v-card-text>
                   <!-- 로봇 상태 정보 -->
-                  <div class="d-flex align-center mb-4">
+                <div class="mb-4">
+                  <div class="d-flex align-center mb-2">
                     <status-badge
                       :status="getRobotStatus(selectedRobot)"
                       type="robot"
                       class="mr-2"
                     ></status-badge>
-                    <span v-if="getRobotBattery(selectedRobot) !== null">
-                      배터리: {{ getRobotBattery(selectedRobot) }}%
-                    </span>
+                    <span class="text-subtitle-2">로봇 상태</span>
                   </div>
+                  
+                  <!-- 배터리 게이지 -->
+                  <div v-if="getRobotBattery(selectedRobot) !== null" class="mb-3">
+                    <div class="d-flex justify-space-between align-center mb-1">
+                      <span class="text-caption">
+                        <v-icon size="small" color="primary">mdi-battery</v-icon>
+                        배터리
+                      </span>
+                      <span class="text-caption font-weight-medium">
+                        {{ getRobotBattery(selectedRobot) }}%
+                      </span>
+                    </div>
+                    <v-progress-linear
+                      :model-value="getRobotBattery(selectedRobot)"
+                      :color="getBatteryColor(getRobotBattery(selectedRobot))"
+                      height="10"
+                      rounded
+                      striped
+                    ></v-progress-linear>
+                  </div>
+                  
+                  <!-- 물 게이지 -->
+                  <div v-if="getRobotWater(selectedRobot) !== null" class="mb-2">
+                    <div class="d-flex justify-space-between align-center mb-1">
+                      <span class="text-caption">
+                        <v-icon size="small" color="info">mdi-water</v-icon>
+                        물 잔량
+                      </span>
+                      <span class="text-caption font-weight-medium">
+                        {{ getRobotWater(selectedRobot) }}%
+                      </span>
+                    </div>
+                    <v-progress-linear
+                      :model-value="getRobotWater(selectedRobot)"
+                      color="info"
+                      height="10"
+                      rounded
+                      striped
+                    ></v-progress-linear>
+                  </div>
+                </div>
                   
                   <!-- 위치 정보 -->
                   <v-sheet
@@ -697,7 +737,13 @@ import StatusBadge from '../components/common/StatusBadge.vue';
       },
       
       getRobotBattery(robot) {
-        return robot?.status?.battery !== undefined ? robot.status.battery : null;
+        const battery = robot?.status?.battery;
+        return battery !== undefined ? Math.round(battery) : null;
+      },
+
+      getRobotWater(robot) {
+        const water = robot?.status?.water;
+        return water !== undefined ? Math.round(water) : null;
       },
       
       getRobotStatusColor(robot) {
@@ -709,6 +755,13 @@ import StatusBadge from '../components/common/StatusBadge.vue';
           default: return 'grey';
         }
       },
+
+      getBatteryColor(batteryLevel) {
+  if (batteryLevel === null || batteryLevel === undefined) return 'grey';
+  if (batteryLevel > 70) return 'success';
+  if (batteryLevel > 30) return 'warning';
+  return 'error';
+},
       
       formatCoord(value) {
         if (value === undefined || value === null) return 'N/A';

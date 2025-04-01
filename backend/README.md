@@ -240,6 +240,7 @@ incidents/{incident_id}/status # 화재 상태 업데이트
 ```json
 {
   "battery": 75,
+  "water": 100,
   "status": "idle"  // idle, moving, fighting_fire
 }
 ```
