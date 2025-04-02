@@ -225,10 +225,15 @@ def create_new_incident(incident_id, incident_data):
                     _mqtt_client.publish(f'robots/{robot_id}/command', json.dumps(command))
                     print(f'화재 발생: 로봇 {robot_id}에게 미션 {mission_id} 할당')
 
-                    # PostgreSQL 로봇 상태 업데이트 (기존 코드 유지)
-                    robot = db.query(Robot).filter(Robot.robot_id == robot_id).first()
-                    if robot:
-                        robot.status = "on_mission"
+                    # 아래 부분을 쓸려면 robot.py model을 수정하고 쓰시오.
+
+                    # # PostgreSQL 로봇 상태 업데이트 (기존 코드 유지)
+                    # robot = db.query(Robot).filter(Robot.robot_id == robot_id).first()
+                    # if robot:
+                    #     print(f"로봇 {robot_id} 상태를 on_mission으로 변경합니다. 이전 상태: {robot.status}")
+                    #     robot.status = "on_mission"
+                    #     db.commit()  # 여기에 명시적 커밋 추가
+                    #     print(f"로봇 {robot_id} 상태가 변경되었습니다: {robot.status}")
 
                     # Redis에 별도 키로 미션 상태 저장
                     redis_client.set(f"robot:{robot_id}:mission_status", "on_mission")
