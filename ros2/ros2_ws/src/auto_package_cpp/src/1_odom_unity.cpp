@@ -3,6 +3,7 @@
 #include "nav_msgs/msg/odometry.hpp"
 #include "geometry_msgs/msg/transform_stamped.hpp"
 #include "tf2_ros/static_transform_broadcaster.h"
+#include "tf2_ros/transform_broadcaster.h"
 
 class NewOdomNode : public rclcpp::Node {
 public:
@@ -20,8 +21,9 @@ public:
     // Odom 발행자 생성
     odom_publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
     
-    // TF 브로드캐스터 초기화
-    broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
+    // StaticTransformBroadcaster 대신 TransformBroadcaster 사용
+    tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(this);
+    static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);
     
     // Odometry 메시지 초기화
     odom_msg_.header.frame_id = "map";
@@ -48,6 +50,9 @@ public:
     odom_msg_.twist.twist.linear.z = 0.0;
     odom_msg_.twist.twist.angular.x = 0.0;
     odom_msg_.twist.twist.angular.y = 0.0;
+
+    // laser transform은 한 번만 발행
+    static_broadcaster_->sendTransform(laser_transform_);
   }
 
 private:
@@ -94,11 +99,8 @@ private:
     transform_.transform.translation.z = 0.0;
     transform_.transform.rotation = msg->orientation;
     
-    // Transform 브로드캐스트
-    std::vector<geometry_msgs::msg::TransformStamped> transforms;
-    transforms.push_back(transform_);
-    transforms.push_back(laser_transform_);
-    broadcaster_->sendTransform(transforms);
+    // Transform 브로드캐스트 - base_link transform만 동적으로 발행
+    tf_broadcaster_->sendTransform(transform_);
     
     // Odometry 발행
     odom_publisher_->publish(odom_msg_);
@@ -107,7 +109,8 @@ private:
   rclcpp::Subscription<geometry_msgs::msg::Pose>::SharedPtr pose_sub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr cmd_vel_sub_;
   rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
-  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> broadcaster_;
+  std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  std::shared_ptr<tf2_ros::StaticTransformBroadcaster> static_broadcaster_;
   nav_msgs::msg::Odometry odom_msg_;
   geometry_msgs::msg::TransformStamped transform_;
   geometry_msgs::msg::TransformStamped laser_transform_;

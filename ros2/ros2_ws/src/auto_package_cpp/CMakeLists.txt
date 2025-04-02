@@ -36,7 +36,7 @@ find_package(std_msgs REQUIRED)
 # find_package(nlohmann_json REQUIRED)
 
 # 커스텀 메시지 및 네비게이션 관련 패키지
-# find_package(ssafy_msgs REQUIRED)
+find_package(ssafy_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(tf2_ros REQUIRED)
@@ -120,7 +120,7 @@ ament_target_dependencies(file_path "ament_index_cpp")
 add_executable(odom_node src/1_odom_unity.cpp)
 ament_target_dependencies(odom_node
   "rclcpp"
-  # "ssafy_msgs"
+  "ssafy_msgs"
   "nav_msgs"
   "geometry_msgs"
   "tf2_ros")
@@ -199,7 +199,7 @@ ament_target_dependencies(follow_the_carrot
   "rclcpp"
   "nav_msgs"
   "geometry_msgs"
-  # "ssafy_msgs"
+  "ssafy_msgs"
   # "sensor_msgs"
   "tf2_ros")
 

@@ -12,26 +12,24 @@ class CmdVelPublisher(Node):
         # 타이머 추가 (10Hz = 0.1초 주기)
         self.timer = self.create_timer(0.1, self.timer_callback)
         self.current_linear_x = 0.0
-        self.current_linear_z = 0.0
-        self.current_angular_y = 0.0
+        self.current_angular_z = 0.0
         self.get_logger().info('cmd_vel 토픽 발행자가 시작되었습니다.')
 
     def timer_callback(self):
         msg = Twist()
         msg.linear.x = float(self.current_linear_x)
         msg.linear.y = 0.0
-        msg.linear.z = float(self.current_linear_z)
+        msg.linear.z = 0.0
         msg.angular.x = 0.0
-        msg.angular.y = float(self.current_angular_y)
-        msg.angular.z = 0.0
+        msg.angular.y = 0.0
+        msg.angular.z = float(self.current_angular_z)
         
         self.publisher.publish(msg)
 
-    def update_velocity(self, linear_x, linear_z, angular_y):
+    def update_velocity(self, linear_x, angular_z):
         self.current_linear_x = linear_x
-        self.current_linear_z = linear_z
-        self.current_angular_y = angular_y
-        self.get_logger().info(f'속도 업데이트 - 선속도 X: {linear_x}, 선속도 Z: {linear_z}, 각속도 Y: {angular_y}')
+        self.current_angular_z = angular_z
+        self.get_logger().info(f'속도 업데이트 - 선속도: {linear_x}, 각속도: {angular_z}')
 
 def main(args=None):
     rclpy.init(args=args)
@@ -44,23 +42,22 @@ def main(args=None):
     try:
         while True:
             try:
-                linear_x = input("선속도 X (m/s)를 입력하세요 (종료: q): ")
+                linear_x = input("선속도 (m/s)를 입력하세요 (종료: q): ")
                 if linear_x.lower() == 'q':
                     break
                 
-                linear_z = input("선속도 Z (m/s)를 입력하세요: ")
-                angular_y = input("각속도 Y (rad/s)를 입력하세요: ")
-                cmd_vel_publisher.update_velocity(float(linear_x), float(linear_z), float(angular_y))
+                angular_z = input("각속도 (rad/s)를 입력하세요: ")
+                cmd_vel_publisher.update_velocity(float(linear_x), float(angular_z))
                 
             except ValueError as e:
                 cmd_vel_publisher.get_logger().error('올바른 숫자를 입력해주세요.')
             
     except KeyboardInterrupt:
         # 종료 시 로봇을 정지
-        cmd_vel_publisher.update_velocity(0.0, 0.0, 0.0)
+        cmd_vel_publisher.update_velocity(0.0, 0.0)
         
     # 종료 처리
-    cmd_vel_publisher.update_velocity(0.0, 0.0, 0.0)
+    cmd_vel_publisher.update_velocity(0.0, 0.0)
     rclpy.shutdown()
     spin_thread.join()
     cmd_vel_publisher.destroy_node()

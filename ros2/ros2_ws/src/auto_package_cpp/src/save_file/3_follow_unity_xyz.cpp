@@ -3,14 +3,13 @@
  * 
  * 기능:
  * - local_path를 따라 로봇을 제어
- * - xz 평면에서의 이동과 y축 회전 제어
+ * - 3축 선속도(x,y,z)와 y축 회전 제어
  * - Unity 환경에 맞춘 좌표계 변환
  * 
  * 토픽:
  * - 구독:
  *   - /local_path: 지역 경로
  *   - /odom: 로봇의 위치 정보
- *   - /goal_point: 목표점 정보
  * - 발행:
  *   - /cmd_vel: 로봇 제어 명령
  */
@@ -19,7 +18,6 @@
 #include "geometry_msgs/msg/twist.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "nav_msgs/msg/path.hpp"
-#include "geometry_msgs/msg/point.hpp"
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/LinearMath/Matrix3x3.h>
 #include <cmath>
@@ -36,10 +34,11 @@ public:
     UnityController() : Node("unity_controller"), 
                        has_path_(false),
                        has_odom_(false),
-                       has_goal_(false),
-                       linear_speed_(0.1),    // 선속도를 1.0으로 수정
-                       max_angular_speed_(90.0),  // 최대 각속도
-                       goal_tolerance_(0.3)      // 목표점 도달 허용 오차 (0.3m)
+                       look_ahead_dist_(0.5),    // 전방 주시 거리
+                       max_linear_speed_(1.0),   // 최대 선속도
+                       min_linear_speed_(0.1),   // 최소 선속도
+                       max_angular_speed_(1.0),  // 최대 각속도
+                       goal_tolerance_(0.1)      // 목표점 도달 허용 오차
     {
         // Publishers
         cmd_vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
@@ -53,10 +52,6 @@ public:
             "odom", 10,
             std::bind(&UnityController::odom_callback, this, std::placeholders::_1));
 
-        goal_sub_ = create_subscription<geometry_msgs::msg::Point>(
-            "/goal_point", 10,
-            std::bind(&UnityController::goal_callback, this, std::placeholders::_1));
-
         // Control loop timer
         timer_ = create_wall_timer(50ms, std::bind(&UnityController::control_loop, this));
 
@@ -64,19 +59,10 @@ public:
     }
 
 private:
-    // 각도 변환을 위한 상수 추가 (클래스 내 private 섹션 상단에)
-    const double RAD_TO_DEG = 180.0 / M_PI;
-    const double DEG_TO_RAD = M_PI / 180.0;
-
     void path_callback(const nav_msgs::msg::Path::SharedPtr msg)
     {
         path_ = *msg;
         has_path_ = !msg->poses.empty();
-        
-        if (!has_path_) {
-            RCLCPP_WARN(get_logger(), "Received empty path");
-            stop_robot();
-        }
     }
 
     void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
@@ -93,113 +79,102 @@ private:
         tf2::Matrix3x3 m(q);
         double roll, pitch, yaw;
         m.getRPY(roll, pitch, yaw);
-        // 라디안에서 도로 변환하고 180도 회전
-        current_yaw_ = (yaw * RAD_TO_DEG) - 180.0;  
-    }
-
-    void goal_callback(const geometry_msgs::msg::Point::SharedPtr msg)
-    {
-        goal_point_ = *msg;
-        has_goal_ = true;
-        RCLCPP_INFO(get_logger(), "Received new goal point: (%.2f, %.2f)", msg->x, msg->z);
+        current_yaw_ = yaw - M_PI;  // Unity 좌표계 보정
     }
 
     void control_loop()
     {
-        if (!has_path_ || !has_odom_ || !has_goal_) {
+        if (!has_path_ || !has_odom_) {
             stop_robot();
             return;
         }
 
         // 현재 로봇 위치
         double robot_x = odom_.pose.pose.position.x;
-        double robot_z = odom_.pose.pose.position.z;
+        double robot_y = odom_.pose.pose.position.y;
 
-        // 목표점까지의 거리 확인
-        double dist_to_goal = std::hypot(
-            goal_point_.x - robot_x,
-            goal_point_.y - robot_z
-        );
-
-        RCLCPP_INFO(get_logger(), 
-            "Distance to goal: %.2f, Goal(x,z): (%.2f, %.2f), Robot(x,z): (%.2f, %.2f)",
-            dist_to_goal,
-            goal_point_.x, goal_point_.y,
-            robot_x, robot_z
-        );
-
-        // 목표점에 도달했는지 확인
-        if (dist_to_goal < goal_tolerance_) {
-            RCLCPP_INFO(get_logger(), "Goal reached!");
-            stop_robot();
-            return;
-        }
-
-        // 다음 경로점 찾기
+        // 목표점 찾기
         geometry_msgs::msg::Point target_point;
-        if (!find_next_point(robot_x, robot_z, target_point)) {
-            RCLCPP_WARN(get_logger(), "No valid path point found");
+        if (!find_target_point(robot_x, robot_y, target_point)) {
             stop_robot();
             return;
         }
 
-        // 로봇 기준 목표점 좌표 계산 (x,z 평면)
+        // 로봇 기준 목표점 좌표 계산
         double dx = target_point.x - robot_x;
-        double dz = target_point.y - robot_z;
+        double dy = target_point.y - robot_y;
 
-        RCLCPP_INFO(get_logger(), 
-            "Target relative position - dx: %.2f, dz: %.2f",
-            dx, dz
-        );
-
-        // 각도 계산 부분 수정
-        double target_angle = (std::atan2(dz, dx) * RAD_TO_DEG) - 180.0;
+        // Unity 좌표계에 맞춰 변환
+        double target_angle = std::atan2(dy, dx) - M_PI;
         double angle_diff = normalize_angle(target_angle - current_yaw_);
 
         // 속도 명령 생성
         geometry_msgs::msg::Twist cmd_vel;
         
-        // sin, cos 함수는 라디안을 사용하므로 다시 변환
-        double angle_rad = angle_diff * DEG_TO_RAD;
-        cmd_vel.linear.x = linear_speed_ * std::sin(angle_rad);
-        cmd_vel.linear.y = 0.0;
-        cmd_vel.linear.z = linear_speed_ * std::cos(angle_rad);
+        // 거리에 비례한 선속도 계산
+        double distance = std::sqrt(dx*dx + dy*dy);
+        double speed = std::min(max_linear_speed_, distance);
+        speed = std::max(min_linear_speed_, speed);
 
-        // 각속도도 도 단위로 처리 (이미 도 단위임)
-        cmd_vel.angular.y = 0.0;
+        // 3축 선속도 분해
+        cmd_vel.linear.x = speed * std::cos(angle_diff);
+        cmd_vel.linear.y = speed * std::sin(angle_diff);
+        cmd_vel.linear.z = 0.0;  // 높이 제어는 하지 않음
+
+        // y축 회전 제어 (항상 정면 유지)
+        cmd_vel.angular.y = angle_diff * max_angular_speed_;
 
         // 명령 발행
         cmd_vel_pub_->publish(cmd_vel);
     }
 
-    bool find_next_point(double robot_x, double robot_z, geometry_msgs::msg::Point& target)
+    bool find_target_point(double robot_x, double robot_y, geometry_msgs::msg::Point& target)
     {
         if (path_.poses.empty()) return false;
 
-        // 가장 가까운 경로점 찾기
-        for (const auto& pose : path_.poses) {
-            target.x = pose.pose.position.x;
-            target.y = pose.pose.position.z;  // z 대신 y 사용
-            return true;
+        // 경로 끝점까지의 거리 확인
+        double dist_to_end = std::hypot(
+            path_.poses.back().pose.position.x - robot_x,
+            path_.poses.back().pose.position.y - robot_y
+        );
+
+        // 목표점에 도달했는지 확인
+        if (dist_to_end < goal_tolerance_) {
+            return false;
         }
 
-        return false;
+        // 전방 주시 거리의 목표점 찾기
+        for (size_t i = 0; i < path_.poses.size() - 1; ++i) {
+            double dist = std::hypot(
+                path_.poses[i].pose.position.x - robot_x,
+                path_.poses[i].pose.position.y - robot_y
+            );
+
+            if (dist >= look_ahead_dist_) {
+                target = path_.poses[i].pose.position;
+                return true;
+            }
+        }
+
+        // 전방 주시 거리 내에 점이 없으면 마지막 점 사용
+        target = path_.poses.back().pose.position;
+        return true;
     }
 
     void stop_robot()
     {
         geometry_msgs::msg::Twist cmd_vel;
-        cmd_vel.linear.x = 0.0;  // 전진/후진 정지
-        cmd_vel.linear.y = 0.0;  // 높이 방향
-        cmd_vel.linear.z = 0.0;  // 좌우 이동 정지
-        cmd_vel.angular.y = 0.0; // 회전 정지
+        cmd_vel.linear.x = 0.0;
+        cmd_vel.linear.y = 0.0;
+        cmd_vel.linear.z = 0.0;
+        cmd_vel.angular.y = 0.0;
         cmd_vel_pub_->publish(cmd_vel);
     }
 
     double normalize_angle(double angle)
     {
-        while (angle > 180.0) angle -= 360.0;
-        while (angle < -180.0) angle += 360.0;
+        while (angle > M_PI) angle -= 2.0 * M_PI;
+        while (angle < -M_PI) angle += 2.0 * M_PI;
         return angle;
     }
 
@@ -209,7 +184,6 @@ private:
     // Subscribers
     rclcpp::Subscription<nav_msgs::msg::Path>::SharedPtr path_sub_;
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-    rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr goal_sub_;
 
     // Timer
     rclcpp::TimerBase::SharedPtr timer_;
@@ -217,18 +191,18 @@ private:
     // Data
     nav_msgs::msg::Path path_;
     nav_msgs::msg::Odometry odom_;
-    geometry_msgs::msg::Point goal_point_;
     double current_yaw_;
 
     // Parameters
-    double linear_speed_;
+    double look_ahead_dist_;
+    double max_linear_speed_;
+    double min_linear_speed_;
     double max_angular_speed_;
     double goal_tolerance_;
 
     // State flags
     bool has_path_;
     bool has_odom_;
-    bool has_goal_;
 };
 
 int main(int argc, char** argv)
