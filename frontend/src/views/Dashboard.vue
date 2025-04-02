@@ -246,7 +246,6 @@
                       type="robot"
                       class="mr-2"
                     ></status-badge>
-                    <span class="text-subtitle-2">로봇 상태</span>
                   </div>
                   
                   <!-- 배터리 게이지 -->
@@ -733,7 +732,16 @@ import StatusBadge from '../components/common/StatusBadge.vue';
       },
       
       getRobotStatus(robot) {
-        return robot?.status?.status || 'idle';
+      // robots 객체에서 해당 로봇 ID의 실시간 정보를 가져옴
+      const realTimeRobot = this.robots[robot.robot_id];
+      
+      // 실시간 데이터가 있으면 그것을 사용, 없으면 입력된 robot 객체 사용
+      if (realTimeRobot) {
+        return realTimeRobot.mission_status || realTimeRobot.status?.status || 'idle';
+      }
+      
+      // 기존 로직 유지
+      return robot.mission_status || robot.status?.status || 'idle';
       },
       
       getRobotBattery(robot) {

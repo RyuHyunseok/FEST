@@ -36,7 +36,8 @@
             idle: { color: 'info', text: '대기 중', icon: 'mdi-clock-outline' },
             inactive: { color: 'grey', text: '비활성', icon: 'mdi-cancel' },
             warning: { color: 'warning', text: '경고', icon: 'mdi-alert' },
-            error: { color: 'error', text: '오류', icon: 'mdi-alert-circle' }
+            error: { color: 'error', text: '오류', icon: 'mdi-alert-circle' },
+            on_mission: { color: 'warning', text: '임무 수행 중', icon: 'mdi-robot-industrial'}
           },
           robot: {
             idle: { color: 'info', text: '대기 중', icon: 'mdi-robot' },

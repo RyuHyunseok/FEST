@@ -98,6 +98,25 @@ async def broadcast_robots_data():
                         status_data = redis_client.get(key)
                         if status_data:
                             robots_data[robot_id]["status"] = json.loads(status_data)
+
+                mission_status_keys = redis_client.keys("robot:*:mission_status")
+                for key in mission_status_keys:
+                    parts = key.split(':')
+                    if len(parts) >= 3:
+                        robot_id = parts[1]
+                        if robot_id not in robots_data:
+                            robots_data[robot_id] = {}
+                        
+                        # 미션 상태 추가
+                        mission_status = redis_client.get(key)
+                        if mission_status:
+                            # 상태가 아직 없으면 초기화
+                            if "status" not in robots_data[robot_id]:
+                                robots_data[robot_id]["status"] = {}
+                            
+                            # mission_status 필드 추가
+                            robots_data[robot_id]["mission_status"] = mission_status
+
                 
                 # 화재 데이터 처리
                 incident_keys = redis_client.keys("incident:*")

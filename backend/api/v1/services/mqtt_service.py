@@ -225,28 +225,15 @@ def create_new_incident(incident_id, incident_data):
                     _mqtt_client.publish(f'robots/{robot_id}/command', json.dumps(command))
                     print(f'화재 발생: 로봇 {robot_id}에게 미션 {mission_id} 할당')
 
-                    # 로봇 상태 업데이트 (PostgreSQL)
+                    # PostgreSQL 로봇 상태 업데이트 (기존 코드 유지)
                     robot = db.query(Robot).filter(Robot.robot_id == robot_id).first()
                     if robot:
                         robot.status = "on_mission"
-                        
-                    # 로봇 상태 업데이트 (Redis - 실시간 표시용)
-                    robot_status = {
-                        "status": "on_mission"
-                    }
-                        
-                    # 기존 상태 정보 유지 (배터리 등)
-                    existing_status = redis_client.get(f"robot:{robot_id}:status")
-                    if existing_status:
-                        try:
-                            existing_data = json.loads(existing_status)
-                            for key in existing_data:
-                                if key != "status":
-                                    robot_status[key] = existing_data[key]
-                        except:
-                            pass
-                            
-                    redis_client.set(f"robot:{robot_id}:status", json.dumps(robot_status))
+
+                    # Redis에 별도 키로 미션 상태 저장
+                    redis_client.set(f"robot:{robot_id}:mission_status", "on_mission")
+                    print(f"Mission status set to on_mission for robot {robot_id}")
+
 
         db.commit()
         print(f"새로운 화재 db 저장완료: {incident}")
@@ -298,9 +285,17 @@ def update_incident_status(incident_id, status_data):
             if mission:
                 # 미션 상태 업데이트
                 mission.status = "completed"
-                # 완료 시간 설정
                 mission.completed_at = incident.extinguished_at or datetime.datetime.now()
-                print(f"Mission {mission.mission_id} status updated to completed")
+                
+                # PostgreSQL 로봇 상태 업데이트
+                robot = db.query(Robot).filter(Robot.robot_id == mission.robot_id).first()
+                if robot:
+                    robot.status = "idle"
+                
+                # Redis에 별도 키로 미션 상태 저장
+                robot_id = mission.robot_id
+                redis_client.set(f"robot:{robot_id}:mission_status", "idle")
+                print(f"Mission status set to idle for robot {robot_id}")
         
         db.commit()
         print(f"화재 상태 업데이트: {incident}")
