@@ -246,7 +246,6 @@
                       type="robot"
                       class="mr-2"
                     ></status-badge>
-                    <span class="text-subtitle-2">로봇 상태</span>
                   </div>
                   
                   <!-- 배터리 게이지 -->
@@ -477,6 +476,17 @@
     @confirm="onProwlerAlertConfirm"
   />
 
+  <alert-dialog
+  v-model="showFireExtinguishedAlert"
+  title="화재 진압 완료!"
+  icon="mdi-check-circle"
+  content-icon="mdi-fire-off"
+  color="success"
+  heading="화재가 성공적으로 진압되었습니다!"
+  message="로봇이 화재 진압을 완료했습니다."
+  button-text="확인"
+  @confirm="onFireExtinguishedAlertConfirm"
+/>
 
   </template>
   
@@ -531,7 +541,11 @@ import StatusBadge from '../components/common/StatusBadge.vue';
 
         // 이미 알림을 표시한 ID 추적
         notifiedFireIds: new Set(),
-        notifiedProwlerIds: new Set()
+        notifiedProwlerIds: new Set(),
+
+        showFireExtinguishedAlert: false,
+        extinguishedFireId: null,
+        notifiedExtinguishedFireIds: new Set()
       };
     },
     computed: {
@@ -699,6 +713,17 @@ import StatusBadge from '../components/common/StatusBadge.vue';
           this.notifiedFireIds.add(id); // 알림 표시 기록
           
         }
+
+        // 화재 진압 완료 감지
+        if (newIncidents[id].status === 'extinguished' && 
+                  oldIncidents[id] && oldIncidents[id].status !== 'extinguished' && 
+                  !this.notifiedExtinguishedFireIds.has(id)) {
+                // 화재 진압 완료 알림 표시
+                this.extinguishedFireId = id;
+                this.showFireExtinguishedAlert = true;
+                this.notifiedExtinguishedFireIds.add(id); // 알림 표시 기록
+              }
+
       });
       
       // 화재 데이터 업데이트
@@ -733,7 +758,16 @@ import StatusBadge from '../components/common/StatusBadge.vue';
       },
       
       getRobotStatus(robot) {
-        return robot?.status?.status || 'idle';
+      // robots 객체에서 해당 로봇 ID의 실시간 정보를 가져옴
+      const realTimeRobot = this.robots[robot.robot_id];
+      
+      // 실시간 데이터가 있으면 그것을 사용, 없으면 입력된 robot 객체 사용
+      if (realTimeRobot) {
+        return realTimeRobot.mission_status || realTimeRobot.status?.status || 'idle';
+      }
+      
+      // 기존 로직 유지
+      return robot.mission_status || robot.status?.status || 'idle';
       },
       
       getRobotBattery(robot) {
