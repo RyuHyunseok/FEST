@@ -14,9 +14,15 @@ import datetime
 
 from models.mission import FirefightingMission
 
+import os
 
 # Redis 연결 설정
-redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+redis_client = redis.Redis(
+    host=os.getenv('REDIS_HOST', 'localhost'), 
+    port=int(os.getenv('REDIS_PORT', 6379)), 
+    db=int(os.getenv('REDIS_DB', 0)), 
+    decode_responses=True
+)
 
 # 위치 데이터 샘플링을 위한 설정
 POSITION_SAMPLE_INTERVAL = 1  # 1초마다 위치 데이터 저장

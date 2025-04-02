@@ -13,11 +13,18 @@ from schemas.incident import IncidentCreate, IncidentUpdate
 from infra.mqtt.mqtt_client import mqtt_client
 from sqlalchemy import func
 from geoalchemy2.functions import ST_MakePoint
+import os
+
 
 router = APIRouter()
 
 # Redis 클라이언트
-redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+redis_client = redis.Redis(
+    host=os.getenv('REDIS_HOST', 'localhost'), 
+    port=int(os.getenv('REDIS_PORT', 6379)), 
+    db=int(os.getenv('REDIS_DB', 0)), 
+    decode_responses=True
+)
 
 @router.get("/", response_model=List[IncidentSchema])
 def get_incidents(db: Session = Depends(get_db)):

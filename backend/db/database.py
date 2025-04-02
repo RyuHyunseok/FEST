@@ -1,9 +1,17 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+import os
+from dotenv import load_dotenv
+
+# .env 파일 로드
+load_dotenv()
 
 # PostgreSQL 연결 문자열 설정
-SQLALCHEMY_DATABASE_URL = "postgresql://ssafy:ssafy@localhost:5432/fest_db"
+SQLALCHEMY_DATABASE_URL = (
+    f"postgresql://{os.getenv('DB_USER')}:{os.getenv('DB_PASSWORD')}@"
+    f"{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/{os.getenv('DB_NAME')}"
+)
 
 # SQLAlchemy 엔진 생성
 engine = create_engine(SQLALCHEMY_DATABASE_URL)

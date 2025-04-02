@@ -10,11 +10,17 @@ from models.position import RobotPosition
 from schemas.robot import Robot as RobotSchema
 from schemas.robot import RobotCreate, RobotPosition as RobotPositionSchema, RobotCommand
 from infra.mqtt.mqtt_client import mqtt_client
+import os
 
 router = APIRouter()
 
 # Redis 클라이언트
-redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+redis_client = redis.Redis(
+    host=os.getenv('REDIS_HOST', 'localhost'), 
+    port=int(os.getenv('REDIS_PORT', 6379)), 
+    db=int(os.getenv('REDIS_DB', 0)), 
+    decode_responses=True
+)
 
 @router.get("/", response_model=List[RobotSchema])
 def get_robots(db: Session = Depends(get_db)):

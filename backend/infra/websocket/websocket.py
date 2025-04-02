@@ -7,8 +7,15 @@ from contextlib import asynccontextmanager
 from jose import JWTError, jwt
 from core.config import SECRET_KEY, ALGORITHM
 
+import os
+
 # Redis 클라이언트 설정
-redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+redis_client = redis.Redis(
+    host=os.getenv('REDIS_HOST', 'localhost'), 
+    port=int(os.getenv('REDIS_PORT', 6379)), 
+    db=int(os.getenv('REDIS_DB', 0)), 
+    decode_responses=True
+)
 
 # 연결된 WebSocket 클라이언트 관리
 class ConnectionManager:
