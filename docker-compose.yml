@@ -59,8 +59,8 @@ services:
   mosquitto:
     image: eclipse-mosquitto
     ports:
-      - "127.0.0.1:1883:1883"  # 로컬 인터페이스에만 바인딩
-      - "127.0.0.1:9001:9001"  # WebSocket 포트도 로컬에만 제한
+      - "1883:1883" # 모든 인터페이스에 바인딩
+      - "9001:9001" # 모든 인터페이스에 바인딩
     volumes:
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
