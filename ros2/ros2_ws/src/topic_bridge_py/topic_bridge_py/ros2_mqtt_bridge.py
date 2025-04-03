@@ -32,7 +32,7 @@ class ROS2ToMQTTBridge(Node):
         
         # MQTT 브로커 연결
         try:
-            self.mqtt_client.connect('localhost', 1883, 60)
+            self.mqtt_client.connect('j12d106.p.ssafy.io', 1883, 60)
             self.mqtt_client.loop_start()
             self.get_logger().info("Connected to MQTT broker")
         except Exception as e:
