@@ -8,6 +8,11 @@ import signal
 import sys
 import os
 
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi.responses import RedirectResponse
+from fastapi import Request
+
 # 종료 시그널 핸들러
 def signal_handler(sig, frame):
     print("종료 신호를 받았습니다. 서버를 종료합니다...")
@@ -38,8 +43,21 @@ app = FastAPI(
     title="화재 진압 로봇 관제 API",
     description="ROS2 기반 화재 진압 로봇 시스템의 중앙 관제 API",
     version="0.1.0",
-    lifespan=lifespan
+    lifespan=lifespan,
+    root_path="/"
 )
+
+# HTTPS 리디렉트 미들웨어
+class HttpsRedirectMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        if request.headers.get("x-forwarded-proto", "http") == "http":
+            url = request.url.replace(scheme="https")
+            return RedirectResponse(url._url, status_code=301)
+        return await call_next(request)
+    
+# FastAPI 앱 생성 후 미들웨어 추가
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])  # 도메인 신뢰 설정
+app.add_middleware(HttpsRedirectMiddleware)  # HTTP 요청을 HTTPS로 변환
 
 # CORS 미들웨어 추가
 app.add_middleware(
