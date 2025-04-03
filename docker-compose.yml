@@ -34,8 +34,8 @@ services:
     image: postgis/postgis:17-3.5
     environment:
       - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_USER=${DB_HOST}
+      - POSTGRES_PASSWORD=${DB_HOST_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
