@@ -1,7 +1,8 @@
 // WebSocket 서비스
 
 // WebSocket 서버 URL
-const WS_BASE_URL = 'ws://localhost:8000';
+// const WS_BASE_URL = 'ws://localhost:8000';
+const WS_BASE_URL = 'wss://j12d106.p.ssafy.io';
 
 class WebSocketService {
   constructor() {
