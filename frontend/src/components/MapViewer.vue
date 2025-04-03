@@ -17,12 +17,18 @@ export default {
     incidents: {
     type: Object,
     default: () => ({})
+    },
+    prowlers: {
+      type: Object,
+      default: () => ({})
     }
   },
   data() {
     return {
       robotMeshes: {}, // 로봇 ID를 키로 가지는 메시 객체
-      incidentMeshes: {} // 화재 ID를 키로 가지는 메시 객체 추가
+      incidentMeshes: {}, // 화재 ID를 키로 가지는 메시 객체 추가
+      prowlerMeshes: {},
+      forceRender: false
     };
   },
   watch: {
@@ -39,6 +45,15 @@ export default {
       // console.log('MapViewer: incidents 변경 감지', newIncidents);
       this.updateIncidents(newIncidents);
       }
+    },
+    prowlers: {
+      deep: true,
+      handler(newProwlers, oldProwlers) {
+    // console.log('침입자 데이터 변경 감지:', 
+    //   '새로운 침입자 수:', Object.keys(newProwlers).length, 
+    //   '이전 침입자 수:', oldProwlers ? Object.keys(oldProwlers).length : 0);
+    this.updateProwlers(newProwlers);
+  }
     }
   },
   mounted() {
@@ -200,7 +215,7 @@ export default {
         }
       });
     },
-    animate() {
+    animate() {  
       this.animationFrameId = requestAnimationFrame(this.animate);
       
       if (this.controls) {
@@ -228,10 +243,18 @@ export default {
       }
     });
   }
+// 강제 렌더링 플래그 확인
+if (this.forceRender) {
+    this.forceRender = false;
+    this.renderer.render(this.scene, this.camera);
+    console.log('강제 렌더링 수행됨');
+  } else {
+    this.renderer.render(this.scene, this.camera);
+  }
+
+},
 
 
-      this.renderer.render(this.scene, this.camera);
-    },
     onWindowResize() {
       if (!this.camera || !this.renderer) return;
       
@@ -246,6 +269,9 @@ export default {
     // 화재 관련 메서드
 
     createIncidentMesh(incidentId, location) {
+
+      console.log('화재 생성 시작 ', incidentId, '위치: ', location);
+
   // 화재 효과 그룹
   const fireGroup = new THREE.Group();
   
@@ -284,9 +310,18 @@ export default {
   smallFlame.position.y = 4; // 중심 높이 위
   fireGroup.add(smallFlame);
   
-  // 좌표 설정 (Unity 좌표계를 Three.js 좌표계로 변환)
-  fireGroup.position.set(location.y, 0, location.x);
-  
+// 위치 설정 (90도 반시계방향 회전 적용)
+console.log('화재 위치 계산 전:', location.x, location.y);
+  const posX = -location.x;  // 회전 적용
+  const posZ = location.y;   // 회전 적용
+  console.log('화재 위치 계산 후:', posX, 0, posZ);
+
+
+  // 위치 적용
+  fireGroup.position.set(posX, 0, posZ);
+  console.log('화재 그룹 최종 위치:', fireGroup.position.x, fireGroup.position.y, fireGroup.position.z);
+
+
   // 씬에 추가
   this.scene.add(fireGroup);
   
@@ -305,18 +340,15 @@ updateIncidents(incidents) {
   
   // 현재 화재 ID 목록
   const currentIncidentIds = Object.keys(incidents);
-  // console.log('현재 화재 ID들:', currentIncidentIds);
-  // console.log('현재 맵에 있는 화재 ID들:', Object.keys(this.incidentMeshes));
-  
+
   // 먼저 extinguished 상태의 화재 제거
   currentIncidentIds.forEach(incidentId => {
     const incidentData = incidents[incidentId];
-    // console.log(`화재 ID ${incidentId} 상태:`, incidentData.status);
 
     // extinguished 상태면 화재 제거
     if (incidentData.status === 'extinguished') {
       if (this.incidentMeshes[incidentId]) {
-        // console.log(`화재 ID ${incidentId} 제거 시도`);
+
         try {
           // 화재 메시 참조 저장
           const meshToRemove = this.incidentMeshes[incidentId].mesh;
@@ -324,8 +356,7 @@ updateIncidents(incidents) {
           // 씬에서 제거
           if (meshToRemove) {
             this.scene.remove(meshToRemove);
-            // console.log(`화재 ID ${incidentId} 씬에서 제거 성공`);
-            
+
             // 메모리 해제
             if (meshToRemove.geometry) meshToRemove.geometry.dispose();
             if (meshToRemove.material) {
@@ -373,21 +404,140 @@ updateIncidents(incidents) {
     
     // 화재가 맵에 없으면 새로 생성
     if (!this.incidentMeshes[incidentId]) {
-      // console.log(`새 화재 ID ${incidentId} 생성`);
+
+      console.log(`새 화재 ID ${incidentId} 생성, 위치:`, incidentData.location);
+
       this.createIncidentMesh(incidentId, incidentData.location);
     } else {
       // 위치만 업데이트
-      // console.log(`화재 ID ${incidentId} 위치 업데이트`);
+      // console.log(`화재 ID ${incidentId} 위치 업데이트, 이전:`, this.incidentMeshes[incidentId].mesh.position);
       const incidentMesh = this.incidentMeshes[incidentId].mesh;
-      incidentMesh.position.set(incidentData.location.y, 0, incidentData.location.x);
+
+
+
+      // 회전 적용한 위치 계산
+  const posX = -incidentData.location.x;
+  const posZ = incidentData.location.y;
+  // console.log(`화재 ID ${incidentId} 새 위치 계산:`, posX, 0, posZ);
+  
+  incidentMesh.position.set(posX, 0, posZ);
+  // console.log(`화재 ID ${incidentId} 위치 업데이트 후:`, incidentMesh.position);
     }
   });
   
   // console.log('업데이트 후 맵에 남은 화재 ID들:', Object.keys(this.incidentMeshes));
-}
+},
 
+createProwlerMesh(prowlerId, location) {
+  // X 표시 생성을 위한 그룹
+  const prowlerGroup = new THREE.Group();
+  
+  // 선 굵기
+  const thickness = 1;
+  const length = 10;
+  
+  // X 표시의 첫 번째 선 (직육면체로 대체)
+  const box1Geometry = new THREE.BoxGeometry(thickness, thickness, length);
+  const material = new THREE.MeshBasicMaterial({ color: 0xFF10F0 });
+  const line1 = new THREE.Mesh(box1Geometry, material);
+  line1.rotation.y = Math.PI / 4; // 대각선으로 회전
+  
+  // X 표시의 두 번째 선 (직육면체로 대체)
+  const box2Geometry = new THREE.BoxGeometry(thickness, thickness, length);
+  const line2 = new THREE.Mesh(box2Geometry, material);
+  line2.rotation.y = -Math.PI / 4; // 반대 방향 대각선으로 회전
+  
+  // 선들을 그룹에 추가
+  prowlerGroup.add(line1);
+  prowlerGroup.add(line2);
+  
+  // 위치 설정 (Unity 좌표계를 Three.js 좌표계로 변환)
+  prowlerGroup.position.set(location.y, 0.5, location.x);
+  
+  // 씬에 추가
+  this.scene.add(prowlerGroup);
+  
+  // 맵에 저장
+  this.prowlerMeshes[prowlerId] = {
+    mesh: prowlerGroup
+  };
+  
+  return prowlerGroup;
+},
+  
+  updateProwlers(prowlers) {
+    if (!this.scene) return;
 
-
+    // console.log('updateProwlers 호출됨:', prowlers);
+    // console.log('현재 맵에 표시된 침입자:', Object.keys(this.prowlerMeshes));
+    
+    // 현재 침입자 ID 목록
+    const currentProwlerIds = Object.keys(prowlers);
+    
+    Object.keys(this.prowlerMeshes).forEach(prowlerId => {
+    if (!currentProwlerIds.includes(prowlerId)) {
+      // console.log(`침입자 ID ${prowlerId} 제거 시도`);
+      
+      try {
+        // 씬에서 메시 제거
+        const meshToRemove = this.prowlerMeshes[prowlerId].mesh;
+        if (meshToRemove) {
+          this.scene.remove(meshToRemove);
+          
+          // 자식 객체 제거 및 메모리 해제
+          while(meshToRemove.children.length > 0) {
+            const child = meshToRemove.children[0];
+            meshToRemove.remove(child);
+            if (child.geometry) child.geometry.dispose();
+            if (child.material) {
+              if (Array.isArray(child.material)) {
+                child.material.forEach(m => m.dispose());
+              } else {
+                child.material.dispose();
+              }
+            }
+          }
+          
+          // 메모리 해제
+          if (meshToRemove.geometry) meshToRemove.geometry.dispose();
+          if (meshToRemove.material) {
+            if (Array.isArray(meshToRemove.material)) {
+              meshToRemove.material.forEach(m => m.dispose());
+            } else {
+              meshToRemove.material.dispose();
+            }
+          }
+        }
+        
+        // 객체에서 제거
+        delete this.prowlerMeshes[prowlerId];
+        console.log(`침입자 ID ${prowlerId} 제거 완료`);
+        
+        // 강제 렌더링 트리거 (이 부분이 중요)
+        this.forceRender = true;
+      } catch (error) {
+        console.error(`침입자 ID ${prowlerId} 제거 중 오류:`, error);
+      }
+    }
+  });
+    
+    // 현재 침입자 추가 또는 업데이트
+    currentProwlerIds.forEach(prowlerId => {
+      const prowlerData = prowlers[prowlerId];
+      
+      // 위치 데이터가 없으면 건너뜀
+      if (!prowlerData.location) return;
+      
+      // 침입자가 맵에 없으면 새로 생성
+      if (!this.prowlerMeshes[prowlerId]) {
+        this.createProwlerMesh(prowlerId, prowlerData.location);
+      } else {
+        // 위치만 업데이트
+        const prowlerMesh = this.prowlerMeshes[prowlerId].mesh;
+        prowlerMesh.position.set(prowlerData.location.y, 0.5, prowlerData.location.x);
+      }
+    });
+  }
 
   }
 };

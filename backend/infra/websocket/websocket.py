@@ -98,6 +98,25 @@ async def broadcast_robots_data():
                         status_data = redis_client.get(key)
                         if status_data:
                             robots_data[robot_id]["status"] = json.loads(status_data)
+
+                mission_status_keys = redis_client.keys("robot:*:mission_status")
+                for key in mission_status_keys:
+                    parts = key.split(':')
+                    if len(parts) >= 3:
+                        robot_id = parts[1]
+                        if robot_id not in robots_data:
+                            robots_data[robot_id] = {}
+                        
+                        # 미션 상태 추가
+                        mission_status = redis_client.get(key)
+                        if mission_status:
+                            # 상태가 아직 없으면 초기화
+                            if "status" not in robots_data[robot_id]:
+                                robots_data[robot_id]["status"] = {}
+                            
+                            # mission_status 필드 추가
+                            robots_data[robot_id]["mission_status"] = mission_status
+
                 
                 # 화재 데이터 처리
                 incident_keys = redis_client.keys("incident:*")
@@ -113,15 +132,38 @@ async def broadcast_robots_data():
                         incident_data = redis_client.get(key)
                         if incident_data:
                             incidents_data[incident_id] = json.loads(incident_data)
-                
+
+                # Redis에서 침입자 관련 키 가져오기
+                prowler_keys = redis_client.keys("prowler:*")
+                prowlers_data = {}
+
+                # 침입자 데이터 처리
+                for key in prowler_keys:
+                    # 키에서 침입자 ID 추출 (형식: prowler:{prowler_id})
+                    parts = key.split(':')
+                    if len(parts) >= 2:
+                        prowler_id = parts[1]
+                        
+                        # 침입자 데이터 추가
+                        prowler_data = redis_client.get(key)
+                        if prowler_data:
+                            prowlers_data[prowler_id] = json.loads(prowler_data)
+
                 # 로봇 데이터와 화재 데이터를 별도의 메시지로 전송
                 if robots_data:
-                    robots_message = json.dumps({"robots": robots_data})
+                    robots_message = {
+                        "robots": robots_data,
+                        "prowlers": prowlers_data  # 항상 prowlers 필드 포함
+                    }
+
+                    # JSON 으로 직렬화하여 전송
+                    message_json = json.dumps(robots_message)
+
                     for connection in manager.active_connections:
                         try:
                             # 경로를 확인하여 적절한 클라이언트에게만 전송
                             if hasattr(connection, 'url') and '/ws/robots' in str(connection.url):
-                                await connection.send_text(robots_message)
+                                await connection.send_text(message_json)
                         except Exception as e:
                             print(f"Error sending to robots client: {e}")
                 
@@ -134,7 +176,7 @@ async def broadcast_robots_data():
                                 await connection.send_text(incidents_message)
                         except Exception as e:
                             print(f"Error sending to incidents client: {e}")
-            
+
             await asyncio.sleep(0.05)  # 0.05초마다 업데이트
         
         except Exception as e:

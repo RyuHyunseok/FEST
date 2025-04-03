@@ -67,7 +67,7 @@ def on_message(client, userdata, msg):
                 
                 # Redis에 최신 상태 저장 (로봇별)
                 redis_client.set(f"robot:{robot_id}:status", json.dumps(message))
-                
+                print('redis에 저장ㅁㅎㅁ')
                 # 참고: 상태 정보는 Redis에만 저장하고 PostgreSQL에는 저장하지 않음
                 # 실시간 모니터링에만 사용하므로 영구 저장은 하지 않음
         
@@ -117,6 +117,11 @@ def on_message(client, userdata, msg):
                 
                 # 데이터베이스에 미션 상태 업데이트
                 update_mission_status(mission_id, message)
+
+        elif topic == "prowler/new":
+            # redis에 침입자 정보 저장
+            prowler_id = message.get("prowler_id", f"prowler_{uuid.uuid4().hex[:8]}")
+            redis_client.set(f"prowler:{prowler_id}", json.dumps(message), ex=30) # 30초 후 자동 삭제
 
     except Exception as e:
         print(f"Error processing message: {e}")
@@ -219,7 +224,22 @@ def create_new_incident(incident_id, incident_data):
                     # MQTT로 로봇에게 명령 publish
                     _mqtt_client.publish(f'robots/{robot_id}/command', json.dumps(command))
                     print(f'화재 발생: 로봇 {robot_id}에게 미션 {mission_id} 할당')
-        
+
+                    # 아래 부분을 쓸려면 robot.py model을 수정하고 쓰시오.
+
+                    # # PostgreSQL 로봇 상태 업데이트 (기존 코드 유지)
+                    # robot = db.query(Robot).filter(Robot.robot_id == robot_id).first()
+                    # if robot:
+                    #     print(f"로봇 {robot_id} 상태를 on_mission으로 변경합니다. 이전 상태: {robot.status}")
+                    #     robot.status = "on_mission"
+                    #     db.commit()  # 여기에 명시적 커밋 추가
+                    #     print(f"로봇 {robot_id} 상태가 변경되었습니다: {robot.status}")
+
+                    # Redis에 별도 키로 미션 상태 저장
+                    redis_client.set(f"robot:{robot_id}:mission_status", "on_mission")
+                    print(f"Mission status set to on_mission for robot {robot_id}")
+
+
         db.commit()
         print(f"새로운 화재 db 저장완료: {incident}")
         return True
@@ -270,9 +290,17 @@ def update_incident_status(incident_id, status_data):
             if mission:
                 # 미션 상태 업데이트
                 mission.status = "completed"
-                # 완료 시간 설정
                 mission.completed_at = incident.extinguished_at or datetime.datetime.now()
-                print(f"Mission {mission.mission_id} status updated to completed")
+                
+                # PostgreSQL 로봇 상태 업데이트
+                robot = db.query(Robot).filter(Robot.robot_id == mission.robot_id).first()
+                if robot:
+                    robot.status = "idle"
+                
+                # Redis에 별도 키로 미션 상태 저장
+                robot_id = mission.robot_id
+                redis_client.set(f"robot:{robot_id}:mission_status", "idle")
+                print(f"Mission status set to idle for robot {robot_id}")
         
         db.commit()
         print(f"화재 상태 업데이트: {incident}")
@@ -349,10 +377,10 @@ def start_mqtt_listener():
     # 메시지 구독
     _mqtt_client.subscribe("robots/+/position")  # 모든 로봇 위치 정보 (+ 는 와일드카드)
     _mqtt_client.subscribe("robots/+/status")    # 모든 로봇 상태 정보
-    _mqtt_client.subscribe("incidents/new")       # 새 화재 발생 정보
+    _mqtt_client.subscribe("incidents/new")      # 새 화재 발생 정보
     _mqtt_client.subscribe("incidents/+/status") # 모든 화재 상태 정보
     _mqtt_client.subscribe("mission/+/update")   # 모든 미션 상태 업데이트
-
+    _mqtt_client.subscribe("prowler/new")        # 침입자 발생 정보보
 
     _mqtt_client.loop_start()  # 비동기 구독 시작
     print("MQTT 리스너가 시작되었습니다.")
