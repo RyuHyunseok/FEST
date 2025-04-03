@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 // API 기본 URL 설정
-const API_URL = 'http://localhost:8000/api/v1';
+// const API_URL = 'http://localhost:8000/api/v1';
+const API_URL = 'http://j12d106.p.ssafy.io/api/v1';
 
 // 토큰 가져오기
 const getToken = () => localStorage.getItem('authToken');
