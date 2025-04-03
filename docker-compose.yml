@@ -19,7 +19,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./frontend/nginx/conf.d:/etc/nginx/conf.d
       - /etc/letsencrypt:/etc/letsencrypt:ro
     ports:
       - "80:80"
