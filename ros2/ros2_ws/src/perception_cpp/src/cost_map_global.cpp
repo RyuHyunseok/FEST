@@ -28,10 +28,14 @@ std::string MAP_FILE = common_utils::create_file_path("perception_cpp", "map/map
 std::string COST_MAP_FILE = common_utils::create_file_path("perception_cpp", "map/cost_map.pgm");
 
 // mapping.cpp와 동일한 맵 파라미터 사용
-const double MAP_WIDTH = 20.0;  // 맵의 너비 (미터)
-const double MAP_HEIGHT = 20.0; // 맵의 높이 (미터)
-const double MAP_CENTER_X = 0.0;  // 맵의 중심 X 좌표 (미터)
-const double MAP_CENTER_Y = 0.0;  // 맵의 중심 Y 좌표 (미터)
+
+// 맵 크기를 실제 환경에 맞게 조정
+const double MAP_WIDTH = 120.0;  // 맵의 너비 (미터)
+const double MAP_HEIGHT = 120.0; // 맵의 높이 (미터)
+
+// 맵의 중심점을 실제 환경의 중심으로 조정
+const double MAP_CENTER_X = (107.17 + (-0.83)) / 2.0;  // 약 53.17
+const double MAP_CENTER_Y = -(61.92 + (-38.58)) / 2.0;  // 약 11.67
 
 // 파일 경로를 상수로 정의
 // const std::string MAP_FILE = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\perception_cpp\map\map.pgm)";
@@ -45,13 +49,13 @@ public:
         cost_map_filename_ = COST_MAP_FILE;
         
         // 파라미터 설정
-        inflation_radius_ = 0.3;  // 30cm
-        cost_scaling_factor_ = 2.0;
+        inflation_radius_ = 2.0;  // 30cm
+        cost_scaling_factor_ = 1.0;
         
         // 맵 메타데이터 설정
-        map_meta_.resolution = 0.05;  // 5cm per pixel
-        map_meta_.width = 400;        // 20m / 0.05m = 400 pixels
-        map_meta_.height = 400;       // 20m / 0.05m = 400 pixels
+        map_meta_.resolution = 0.2;  // 5cm per pixel
+        map_meta_.width = 600;        // 20m / 0.05m = 400 pixels
+        map_meta_.height = 600;       // 20m / 0.05m = 400 pixels
         // map_meta_.width = static_cast<int>(MAP_WIDTH / map_meta_.resolution);
         // map_meta_.height = static_cast<int>(MAP_HEIGHT / map_meta_.resolution);
         map_meta_.origin.position.x = MAP_CENTER_X - MAP_WIDTH / 2.0;

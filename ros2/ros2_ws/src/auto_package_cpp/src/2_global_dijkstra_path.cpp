@@ -279,7 +279,7 @@ private:
         open_queue.push(start_node);
         costs[*start_node] = 0;
 
-        int max_iterations = 100000;  // 최대 반복 횟수
+        int max_iterations = 1000000;  // 또는 더 큰 값
         int current_iteration = 0;
         int nodes_expanded = 0;
 
@@ -331,7 +331,13 @@ private:
                 if (visited[*neighbor]) continue;
 
                 // 이동 비용 계산
-                double new_cost = current->cost + move_cost[i] * (1.0 + cost_penalty);
+                // double new_cost = current->cost + move_cost[i] * (1.0 + cost_penalty);
+                // 또는 휴리스틱을 추가하여 탐색 효율성을 개선합니다
+                double heuristic_cost = std::sqrt(
+                    std::pow(new_x - goal.x, 2) + 
+                    std::pow(new_y - goal.y, 2)
+                );
+                double new_cost = current->cost + move_cost[i] * (1.0 + cost_penalty) + heuristic_cost;
 
                 // 더 나은 경로를 찾았거나 이전에 방문하지 않은 노드인 경우
                 auto cost_it = costs.find(*neighbor);
@@ -373,7 +379,7 @@ private:
         int cost = map_.data[index];
         
         // 완전한 장애물(100)만 통과 불가능으로 처리
-        if (cost >= 65) return -1;
+        if (cost >= 10) return -1;
         
         // cost가 낮을수록(0) 낮은 패널티
         // cost가 높을수록(100에 가까울수록) 높은 패널티

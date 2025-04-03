@@ -37,10 +37,13 @@ std::string MAP_FILE = common_utils::create_file_path("perception_cpp", "map/map
 #define M_PI 3.14159265358979323846
 #endif
 
-const double MAP_WIDTH = 20.0;  // 맵의 너비 (미터)
-const double MAP_HEIGHT = 20.0; // 맵의 높이 (미터)
-const double MAP_CENTER_X = 0.0;  // 맵의 중심 X 좌표 (미터)
-const double MAP_CENTER_Y = 0.0;  // 맵의 중심 Y 좌표 (미터)
+// 맵 크기를 실제 환경에 맞게 조정
+const double MAP_WIDTH = 120.0;  // 맵의 너비 (미터)
+const double MAP_HEIGHT = 120.0; // 맵의 높이 (미터)
+
+// 맵의 중심점을 실제 환경의 중심으로 조정
+const double MAP_CENTER_X = (107.17 + (-0.83)) / 2.0;  // 약 53.17
+const double MAP_CENTER_Y = -(61.92 + (-38.58)) / 2.0;  // 약 11.67
 
 // 파일 경로를 상수로 정의
 // const std::string MAP_FILE = R"(C:\Users\SSAFY\Desktop\S12P21D106\ros2\ros2_ws\src\auto_package_cpp\path\map.pgm)";
@@ -118,13 +121,19 @@ public:
             
             if (points.empty()) continue;
             
-            for (size_t j = 0; j < points.size() - 1; ++j) {
+            // 로봇부터 레이저 끝점까지의 경로를 빈 공간으로 처리
+            for (size_t j = 0; j < points.size(); ++j) {
                 float& value = at(points[j].y, points[j].x);
                 value -= occu_down_;
                 value = std::min(1.0f, std::max(0.0f, value));
             }
             
-            if (!points.empty()) {
+            // 10m 거리가 아닌 경우에만 끝점을 장애물로 처리
+            double distance = std::sqrt(
+                std::pow(laser_global(0, i) - pose(0), 2) + 
+                std::pow(laser_global(1, i) - pose(1), 2));
+                
+            if (!points.empty() && std::abs(distance - 10.0) >= 0.1) {
                 float& value = at(points.back().y, points.back().x);
                 value += occu_up_;
                 value = std::min(1.0f, std::max(0.0f, value));
@@ -220,7 +229,7 @@ class MapperNode : public rclcpp::Node {
 public:
     MapperNode() : Node("mapper"), is_map_create_(true), is_odom_(false) {
         MapParams params;
-        params.MAP_RESOLUTION = 0.05;
+        params.MAP_RESOLUTION = 0.2;
         params.OCCUPANCY_UP = 0.1;
         params.OCCUPANCY_DOWN = 0.01;
         params.MAP_CENTER = {MAP_CENTER_X, MAP_CENTER_Y};  // 전역 변수 사용
@@ -231,7 +240,7 @@ public:
         mapping_ = std::make_unique<Mapping>(params);
         
         scan_sub_ = create_subscription<sensor_msgs::msg::LaserScan>(
-            "/scan", 10,
+            "/laser_filtered", 10,
             std::bind(&MapperNode::scan_callback, this, std::placeholders::_1));
             
         odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(

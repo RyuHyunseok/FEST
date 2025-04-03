@@ -216,9 +216,9 @@ private:
                 double x = std::stod(input.substr(0, space_pos));
                 double y = std::stod(input.substr(space_pos + 1));
 
-                if (x < -10.0 || x > 10.0 || y < -10.0 || y > 10.0) {
+                if (x < -100.0 || x > 100.0 || y < -100.0 || y > 100.0) {
                     RCLCPP_ERROR(get_logger(), 
-                        "Coordinates out of range. Please enter values between -10 and 10 meters.");
+                        "Coordinates out of range. Please enter values between -100 and 100 meters.");
                     continue;
                 }
 

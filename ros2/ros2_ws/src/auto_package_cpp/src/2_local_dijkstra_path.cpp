@@ -63,8 +63,8 @@ public:
                         has_global_path_(false),
                         has_cost_map_(false),
                         has_odom_(false),
-                        lookahead_distance_(2.0),  // 2m 전방 거리 고려
-                        collision_threshold_(65)   // 비용 맵에서 70 이상은 충돌로 간주
+                        lookahead_distance_(10.0),  // 4m 전방 거리 고려
+                        collision_threshold_(50)   // 비용 맵에서 70 이상은 충돌로 간주
     {
         // 지역 경로 발행자
         local_path_pub_ = create_publisher<nav_msgs::msg::Path>("local_path", 10);
@@ -184,7 +184,7 @@ private:
             double start_y = global_path_.poses[closest_idx].pose.position.y;
             
             // 목표점 (lookahead_distance_ 근처의 충돌 없는 지점)
-            size_t goal_idx = std::min(closest_idx + 30, global_path_.poses.size() - 1);
+            size_t goal_idx = std::min(closest_idx + 100, global_path_.poses.size() - 1);
             double goal_x = global_path_.poses[goal_idx].pose.position.x;
             double goal_y = global_path_.poses[goal_idx].pose.position.y;
             
@@ -357,9 +357,23 @@ private:
                 // 이미 방문한 노드면 건너뛰기
                 if (visited[*neighbor]) continue;
                 
-                // 이동 비용 계산 (기본 비용 + 코스트맵의 비용)
-                double terrain_cost = cost_map_.data[idx] * 0.1;  // 코스트맵 값을 추가 비용으로 변환
-                double new_cost = current->cost + move_cost[i] * (1.0 + terrain_cost);
+                // 이동 비용 계산 수정
+                double base_cost = cost_map_.data[idx];
+                double terrain_cost;
+                if (base_cost < 10) {
+                    terrain_cost = base_cost * 0.1;  // 낮은 비용 영역
+                } else if (base_cost < 20) {
+                    terrain_cost = base_cost * 0.2;  // 중간 비용 영역
+                } else {
+                    terrain_cost = base_cost * 0.3;  // 높은 비용 영역
+                }
+                
+                // 휴리스틱 비용 추가
+                double dx_to_goal = goal_x - nx;
+                double dy_to_goal = goal_y - ny;
+                double heuristic = std::sqrt(dx_to_goal*dx_to_goal + dy_to_goal*dy_to_goal) * 0.1;
+                
+                double new_cost = current->cost + move_cost[i] * (1.0 + terrain_cost) + heuristic;
                 
                 // 더 나은 경로를 발견하거나 처음 방문하는 노드인 경우
                 auto cost_it = costs.find(*neighbor);

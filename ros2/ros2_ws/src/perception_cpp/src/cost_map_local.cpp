@@ -35,11 +35,11 @@ public:
     LocalCostMapNode() : Node("local_cost_map"),
                             has_odom_(false),
                             has_lidar_(false),
-                            resolution_(0.05),      // 5cm 해상도
+                            resolution_(0.2),      // 5cm 해상도
                             width_(200),            // 10m width (200 * 0.05m)
                             height_(200),           // 10m height (200 * 0.05m)
-                            inflation_radius_(0.3), // 30cm 장애물 팽창 반경
-                            cost_scaling_factor_(2.0) // 장애물로부터의 거리에 따른 비용 감소 계수
+                            inflation_radius_(2.0), // 30cm 장애물 팽창 반경
+                            cost_scaling_factor_(1.0) // 장애물로부터의 거리에 따른 비용 감소 계수
     {
         // 현재 맵 상태를 저장할 OccupancyGrid 메시지 초기화
         cost_map_.header.frame_id = "map";

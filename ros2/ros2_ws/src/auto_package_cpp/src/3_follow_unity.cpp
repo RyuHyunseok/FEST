@@ -37,9 +37,11 @@ public:
                        has_path_(false),
                        has_odom_(false),
                        has_goal_(false),
-                       linear_speed_(0.1),    // 선속도를 1.0으로 수정
+                       linear_speed_(3.0),    // 선속도를 1.0으로 수정
                        max_angular_speed_(90.0),  // 최대 각속도
-                       goal_tolerance_(0.3)      // 목표점 도달 허용 오차 (0.3m)
+                       goal_tolerance_(1.0),      // 목표점 도달 허용 오차 (0.3m)
+                       path_point_selection_(PATH_INDEX),  // 기본값으로 마지막 점 선택
+                       path_point_index_(10)  // 기본 인덱스
     {
         // Publishers
         cmd_vel_pub_ = create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
@@ -68,6 +70,17 @@ private:
     const double RAD_TO_DEG = 180.0 / M_PI;
     const double DEG_TO_RAD = M_PI / 180.0;
 
+    // 경로점 선택 방식을 위한 열거형 추가
+    enum PathPointSelection {
+        PATH_FIRST,      // 첫 번째 점
+        PATH_LAST,       // 마지막 점
+        PATH_FARTHEST,   // 가장 먼 점
+        PATH_NEAREST,    // 가장 가까운 점
+        PATH_INDEX       // 특정 인덱스의 점
+    };
+    PathPointSelection path_point_selection_;
+    size_t path_point_index_;  // 선택할 경로점의 인덱스
+
     void path_callback(const nav_msgs::msg::Path::SharedPtr msg)
     {
         path_ = *msg;
@@ -93,8 +106,8 @@ private:
         tf2::Matrix3x3 m(q);
         double roll, pitch, yaw;
         m.getRPY(roll, pitch, yaw);
-        // 라디안에서 도로 변환하고 180도 회전
-        current_yaw_ = (yaw * RAD_TO_DEG) - 180.0;  
+        // 단순히 라디안에서 도로만 변환
+        current_yaw_ = yaw * RAD_TO_DEG;  // 180도 회전 제거
     }
 
     void goal_callback(const geometry_msgs::msg::Point::SharedPtr msg)
@@ -113,7 +126,7 @@ private:
 
         // 현재 로봇 위치
         double robot_x = odom_.pose.pose.position.x;
-        double robot_z = odom_.pose.pose.position.z;
+        double robot_z = odom_.pose.pose.position.y;
 
         // 목표점까지의 거리 확인
         double dist_to_goal = std::hypot(
@@ -152,20 +165,24 @@ private:
             dx, dz
         );
 
-        // 각도 계산 부분 수정
-        double target_angle = (std::atan2(dz, dx) * RAD_TO_DEG) - 180.0;
-        double angle_diff = normalize_angle(target_angle - current_yaw_);
+        // 각도 계산에서 180도 회전 제거
+        double target_angle = std::atan2(dz, dx) * RAD_TO_DEG;  // 180도 회전 제거
+        double angle_diff = normalize_angle(target_angle);
 
         // 속도 명령 생성
         geometry_msgs::msg::Twist cmd_vel;
         
-        // sin, cos 함수는 라디안을 사용하므로 다시 변환
+        // 단순한 선속도 계산
         double angle_rad = angle_diff * DEG_TO_RAD;
-        cmd_vel.linear.x = linear_speed_ * std::sin(angle_rad);
-        cmd_vel.linear.y = 0.0;
-        cmd_vel.linear.z = linear_speed_ * std::cos(angle_rad);
+        // cmd_vel.linear.x = linear_speed_ * std::cos(angle_rad);  // sin -> cos로 변경
+        // cmd_vel.linear.y = 0.0;
+        // cmd_vel.linear.z = linear_speed_ * std::sin(angle_rad);  // cos -> sin으로 변경
 
-        // 각속도도 도 단위로 처리 (이미 도 단위임)
+        cmd_vel.linear.x = -linear_speed_ * std::sin(angle_rad);  // sin -> cos로 변경
+        cmd_vel.linear.y = 0.0;
+        cmd_vel.linear.z = linear_speed_ * std::cos(angle_rad);  // cos -> sin으로 변경
+
+
         cmd_vel.angular.y = 0.0;
 
         // 명령 발행
@@ -176,14 +193,62 @@ private:
     {
         if (path_.poses.empty()) return false;
 
-        // 가장 가까운 경로점 찾기
-        for (const auto& pose : path_.poses) {
-            target.x = pose.pose.position.x;
-            target.y = pose.pose.position.z;  // z 대신 y 사용
-            return true;
+        size_t selected_idx = 0;
+
+        switch (path_point_selection_) {
+            case PATH_FIRST:
+                selected_idx = 0;
+                break;
+
+            case PATH_LAST:
+                selected_idx = path_.poses.size() - 1;
+                break;
+
+            case PATH_FARTHEST: {
+                double max_dist = -1.0;
+                for (size_t i = 0; i < path_.poses.size(); ++i) {
+                    const auto& pose = path_.poses[i];
+                    double dx = pose.pose.position.x - robot_x;
+                    double dz = pose.pose.position.y - robot_z;
+                    double dist = std::hypot(dx, dz);
+                    if (dist > max_dist) {
+                        max_dist = dist;
+                        selected_idx = i;
+                    }
+                }
+                break;
+            }
+
+            case PATH_NEAREST: {
+                double min_dist = std::numeric_limits<double>::max();
+                for (size_t i = 0; i < path_.poses.size(); ++i) {
+                    const auto& pose = path_.poses[i];
+                    double dx = pose.pose.position.x - robot_x;
+                    double dz = pose.pose.position.y - robot_z;
+                    double dist = std::hypot(dx, dz);
+                    if (dist < min_dist) {
+                        min_dist = dist;
+                        selected_idx = i;
+                    }
+                }
+                break;
+            }
+
+            case PATH_INDEX:
+                // 인덱스가 유효한지 확인
+                if (path_point_index_ < path_.poses.size()) {
+                    selected_idx = path_point_index_;
+                } else {
+                    // 유효하지 않은 인덱스면 마지막 점 선택
+                    selected_idx = path_.poses.size() - 1;
+                }
+                break;
         }
 
-        return false;
+        // 선택된 점의 좌표를 target으로 설정
+        target.x = path_.poses[selected_idx].pose.position.x;
+        target.y = path_.poses[selected_idx].pose.position.y;
+        return true;
     }
 
     void stop_robot()
