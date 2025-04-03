@@ -44,7 +44,10 @@ app = FastAPI(
 # CORS 미들웨어 추가
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vite 기본 개발 서버 포트
+    allow_origins=[
+        "http://localhost:5173",
+        "https://j12d106.p.ssafy.io",
+                   ],  # Vite 기본 개발 서버 포트
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
