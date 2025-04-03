@@ -120,8 +120,8 @@ class OpenCVYOLO(Node):
                 self.bbox_publisher.publish(bbox_msg)
                 self.get_logger().info(f'Published {len(detected_boxes)} bounding boxes')
             
-            # 실제 탐지된 사람 수 표시
-            cv2.putText(flipped_vertical, f'People detected: {results.boxes.shape[0]}', (10, 30), 
+            # 실제 탐지된 사람 수 표시 (신뢰도 임계값을 통과한 사람만 카운트)
+            cv2.putText(flipped_vertical, f'People detected: {len(detected_boxes)}', (10, 30), 
                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             
             self.latest_image = flipped_vertical
