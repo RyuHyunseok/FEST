@@ -2,7 +2,8 @@ import axios from 'axios'
 import router from './router'
 
 // API 기본 URL 설정 (백엔드 서버 주소에 맞게 변경)
-axios.defaults.baseURL = 'http://localhost:8000'
+// axios.defaults.baseURL = 'http://localhost:8000'
+axios.defaults.baseURL = 'https://j12d106.p.ssafy.io/api/v1'
 
 // 요청 인터셉터 - 토큰 포함
 axios.interceptors.request.use(

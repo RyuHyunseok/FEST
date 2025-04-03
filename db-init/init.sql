@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS robots (
     battery INTEGER
 );
 
+INSERT INTO robots (robot_id, name, battery) VALUES ('fest_1', 'fest_1', 100);
+
 -- 화재 사고 테이블
 CREATE TABLE IF NOT EXISTS incidents (
     incident_id VARCHAR(50) PRIMARY KEY,
