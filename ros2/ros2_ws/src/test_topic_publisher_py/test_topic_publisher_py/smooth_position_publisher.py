@@ -50,12 +50,25 @@ class SmoothPositionPublisher(Node):
         # 테스트용 화재 발생 시뮬레이션을 위한 일회성 타이머 (10초 후 한 번만 발생)
         self.fire_timer = self.create_timer(10.0, self.fire_once)
 
+<<<<<<< HEAD
+=======
+        # 테스트용 침입자 발생 시뮬레이션(20초 후 한 번만 실행)
+        self.prowler_timer = self.create_timer(20.0, self.prowler_once)
+
+>>>>>>> origin/develop
     def fire_once(self):
             # 타이머 취소 (한 번만 실행하기 위해)
             self.fire_timer.cancel()
             # 화재 시뮬레이션 실행
             self.simulate_fire()
 
+<<<<<<< HEAD
+=======
+    def prowler_once(self):
+
+        self.prowler_timer.cancel()
+        self.simulate_prowler() 
+>>>>>>> origin/develop
 
     def publish_status(self):
         # MQTT 메시지 생성
@@ -82,6 +95,24 @@ class SmoothPositionPublisher(Node):
 
         self.get_logger().info(f'Publishing status to MQTT: {status_data}')
     
+<<<<<<< HEAD
+=======
+    def simulate_prowler(self):
+        prowler_x = random.uniform(0, 10)
+        prowler_y = random.uniform(0, 10)
+
+        prowler_id = f"prowler_{uuid.uuid4().hex[:8]}"
+
+        prowler_data = {
+            "prowler_id": prowler_id,
+            "location" : {"x": round(prowler_x, 2), "y": round(prowler_y)},
+            "detected_at": int(self.get_clock().now().nanoseconds / 1000000)
+        }
+
+        self.mqtt_client.publish("prowler/new", json.dumps(prowler_data))
+        self.get_logger().info(f'침입자 시뮬레이션 정보: {prowler_data}')
+
+>>>>>>> origin/develop
     def simulate_fire(self):
         """테스트용 화재 발생 시뮬레이션"""
         # 랜덤하게 화재 위치 생성

@@ -153,7 +153,11 @@
               <v-divider></v-divider>
               
               <v-card-text>
+<<<<<<< HEAD
                 <MapViewer :robots="robots" :incidents="incidents"/>
+=======
+                <MapViewer :robots="robots" :incidents="incidents" :prowlers="prowlers"/>
+>>>>>>> origin/develop
               </v-card-text>
             </v-card>
           </v-col>
@@ -239,17 +243,68 @@
                 
                 <v-card-text>
                   <!-- 로봇 상태 정보 -->
+<<<<<<< HEAD
                   <div class="d-flex align-center mb-4">
+=======
+                <div class="mb-4">
+                  <div class="d-flex align-center mb-2">
+>>>>>>> origin/develop
                     <status-badge
                       :status="getRobotStatus(selectedRobot)"
                       type="robot"
                       class="mr-2"
                     ></status-badge>
+<<<<<<< HEAD
                     <span v-if="getRobotBattery(selectedRobot) !== null">
                       배터리: {{ getRobotBattery(selectedRobot) }}%
                     </span>
                   </div>
                   
+=======
+                  </div>
+                  
+                  <!-- 배터리 게이지 -->
+                  <div v-if="getRobotBattery(selectedRobot) !== null" class="mb-3">
+                    <div class="d-flex justify-space-between align-center mb-1">
+                      <span class="text-caption">
+                        <v-icon size="small" color="primary">mdi-battery</v-icon>
+                        배터리
+                      </span>
+                      <span class="text-caption font-weight-medium">
+                        {{ getRobotBattery(selectedRobot) }}%
+                      </span>
+                    </div>
+                    <v-progress-linear
+                      :model-value="getRobotBattery(selectedRobot)"
+                      :color="getBatteryColor(getRobotBattery(selectedRobot))"
+                      height="10"
+                      rounded
+                      striped
+                    ></v-progress-linear>
+                  </div>
+                  
+                  <!-- 물 게이지 -->
+                  <div v-if="getRobotWater(selectedRobot) !== null" class="mb-2">
+                    <div class="d-flex justify-space-between align-center mb-1">
+                      <span class="text-caption">
+                        <v-icon size="small" color="info">mdi-water</v-icon>
+                        물 잔량
+                      </span>
+                      <span class="text-caption font-weight-medium">
+                        {{ getRobotWater(selectedRobot) }}%
+                      </span>
+                    </div>
+                    <v-progress-linear
+                      :model-value="getRobotWater(selectedRobot)"
+                      color="info"
+                      height="10"
+                      rounded
+                      striped
+                    ></v-progress-linear>
+                  </div>
+                </div>
+                  
+>>>>>>> origin/develop
                   <!-- 위치 정보 -->
                   <v-sheet
                     v-if="selectedRobot.position"
@@ -409,6 +464,49 @@
         </v-card>
       </v-dialog>
     </div>
+<<<<<<< HEAD
+=======
+
+
+    <!-- 화재 경고 다이얼로그 -->
+  <alert-dialog
+    v-model="showFireAlert"
+    title="화재 경고!"
+    icon="mdi-fire-alert"
+    content-icon="mdi-fire"
+    color="error"
+    heading="화재가 발생했습니다!"
+    message="시스템에서 새로운 화재가 감지되었습니다."
+    button-text="확인"
+    @confirm="onFireAlertConfirm"
+  />
+  
+  <!-- 침입자 경고 다이얼로그 -->
+  <alert-dialog
+    v-model="showProwlerAlert"
+    title="침입자 경고!"
+    icon="mdi-alert-circle"
+    content-icon="mdi-account-alert"
+    color="warning"
+    heading="침입자가 감지되었습니다!"
+    message="시스템에서 새로운 침입자가 감지되었습니다."
+    button-text="확인"
+    @confirm="onProwlerAlertConfirm"
+  />
+
+  <alert-dialog
+  v-model="showFireExtinguishedAlert"
+  title="화재 진압 완료!"
+  icon="mdi-check-circle"
+  content-icon="mdi-fire-off"
+  color="success"
+  heading="화재가 성공적으로 진압되었습니다!"
+  message="로봇이 화재 진압을 완료했습니다."
+  button-text="확인"
+  @confirm="onFireExtinguishedAlertConfirm"
+/>
+
+>>>>>>> origin/develop
   </template>
   
   <script>
@@ -420,7 +518,12 @@ import StatusBadge from '../components/common/StatusBadge.vue';
   
   import { robotService, incidentService } from '../services/api';
   import wsService from '../services/websocket';
+<<<<<<< HEAD
   
+=======
+  import AlertDialog from '../components/common/AlertDialog.vue';
+
+>>>>>>> origin/develop
   export default {
     name: 'Dashboard',
     components: {
@@ -428,7 +531,12 @@ import StatusBadge from '../components/common/StatusBadge.vue';
       Topbar,
       MapViewer,
       AlertBox,
+<<<<<<< HEAD
       StatusBadge
+=======
+      StatusBadge,
+      AlertDialog
+>>>>>>> origin/develop
     },
     data() {
       return {
@@ -443,6 +551,10 @@ import StatusBadge from '../components/common/StatusBadge.vue';
         robots: {},
         incidents: {},
         robotList: [],
+<<<<<<< HEAD
+=======
+        prowlers: {},
+>>>>>>> origin/develop
         selectedRobotId: null,
         showMoveCommandDialog: false,
         showExtinguishDialog: false,
@@ -451,7 +563,23 @@ import StatusBadge from '../components/common/StatusBadge.vue';
           y: 0
         },
         // 구독 해제 함수
+<<<<<<< HEAD
         unsubscribeCallbacks: []
+=======
+        unsubscribeCallbacks: [],
+        showFireAlert: false,
+        showProwlerAlert: false,
+        currentFireId: null,
+        currentProwlerId: null,
+
+        // 이미 알림을 표시한 ID 추적
+        notifiedFireIds: new Set(),
+        notifiedProwlerIds: new Set(),
+
+        showFireExtinguishedAlert: false,
+        extinguishedFireId: null,
+        notifiedExtinguishedFireIds: new Set()
+>>>>>>> origin/develop
       };
     },
     computed: {
@@ -579,14 +707,69 @@ import StatusBadge from '../components/common/StatusBadge.vue';
           if (data.robots) {
             this.robots = data.robots;
           }
+<<<<<<< HEAD
+=======
+          if (data.prowlers) {
+            // 새로운 침입자 감지 로직
+      const newProwlers = { ...data.prowlers };
+      const oldProwlers = { ...this.prowlers };
+      
+      // 이전에 없던 새 침입자 찾기
+      Object.keys(newProwlers).forEach(id => {
+        if (!oldProwlers[id] && !this.notifiedProwlerIds.has(id)) {
+          // 새 침입자 발생 알림 표시
+          this.currentProwlerId = id;
+          this.showProwlerAlert = true;
+          this.notifiedProwlerIds.add(id); // 알림 표시 기록
+          
+        }
+      });
+      
+      // 침입자 데이터 업데이트
+      this.prowlers = newProwlers;
+          }
+>>>>>>> origin/develop
         });
         this.unsubscribeCallbacks.push(unsubscribeRobots);
         
         // 화재 데이터 콜백 등록
         const unsubscribeIncidents = wsService.onIncidentsData(data => {
           if (data.incidents) {
+<<<<<<< HEAD
             // console.log('새로운 화재 데이터 수신:', data.incidents);
             this.incidents = data.incidents;
+=======
+            // 새로운 화재 감지 로직
+      const newIncidents = { ...data.incidents };
+      const oldIncidents = { ...this.incidents };
+      
+      // 활성 상태이고 이전에 없던 새 화재 찾기
+      Object.keys(newIncidents).forEach(id => {
+        if (newIncidents[id].status === 'active' && 
+            (!oldIncidents[id] || oldIncidents[id].status !== 'active') && 
+            !this.notifiedFireIds.has(id)) {
+          // 새 화재 발생 알림 표시
+          this.currentFireId = id;
+          this.showFireAlert = true;
+          this.notifiedFireIds.add(id); // 알림 표시 기록
+          
+        }
+
+        // 화재 진압 완료 감지
+        if (newIncidents[id].status === 'extinguished' && 
+                  oldIncidents[id] && oldIncidents[id].status !== 'extinguished' && 
+                  !this.notifiedExtinguishedFireIds.has(id)) {
+                // 화재 진압 완료 알림 표시
+                this.extinguishedFireId = id;
+                this.showFireExtinguishedAlert = true;
+                this.notifiedExtinguishedFireIds.add(id); // 알림 표시 기록
+              }
+
+      });
+      
+      // 화재 데이터 업데이트
+      this.incidents = newIncidents;
+>>>>>>> origin/develop
           }
         });
         this.unsubscribeCallbacks.push(unsubscribeIncidents);
@@ -617,11 +800,34 @@ import StatusBadge from '../components/common/StatusBadge.vue';
       },
       
       getRobotStatus(robot) {
+<<<<<<< HEAD
         return robot?.status?.status || 'idle';
       },
       
       getRobotBattery(robot) {
         return robot?.status?.battery !== undefined ? robot.status.battery : null;
+=======
+      // robots 객체에서 해당 로봇 ID의 실시간 정보를 가져옴
+      const realTimeRobot = this.robots[robot.robot_id];
+      
+      // 실시간 데이터가 있으면 그것을 사용, 없으면 입력된 robot 객체 사용
+      if (realTimeRobot) {
+        return realTimeRobot.mission_status || realTimeRobot.status?.status || 'idle';
+      }
+      
+      // 기존 로직 유지
+      return robot.mission_status || robot.status?.status || 'idle';
+      },
+      
+      getRobotBattery(robot) {
+        const battery = robot?.status?.battery;
+        return battery !== undefined ? Math.round(battery) : null;
+      },
+
+      getRobotWater(robot) {
+        const water = robot?.status?.water;
+        return water !== undefined ? Math.round(water) : null;
+>>>>>>> origin/develop
       },
       
       getRobotStatusColor(robot) {
@@ -633,6 +839,16 @@ import StatusBadge from '../components/common/StatusBadge.vue';
           default: return 'grey';
         }
       },
+<<<<<<< HEAD
+=======
+
+      getBatteryColor(batteryLevel) {
+  if (batteryLevel === null || batteryLevel === undefined) return 'grey';
+  if (batteryLevel > 70) return 'success';
+  if (batteryLevel > 30) return 'warning';
+  return 'error';
+},
+>>>>>>> origin/develop
       
       formatCoord(value) {
         if (value === undefined || value === null) return 'N/A';

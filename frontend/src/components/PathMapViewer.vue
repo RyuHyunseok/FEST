@@ -303,9 +303,15 @@ export default {
         
         // Unity 좌표계(x,y)를 Three.js 좌표계(z,x)로 변환
         const threeJSPosition = {
+<<<<<<< HEAD
           x: location.y, // Unity y -> Three.js x
           y: 0.3,       // 바닥에서 약간 위에 표시
           z: location.x  // Unity x -> Three.js z
+=======
+          x: -location.x, // Unity y -> Three.js x
+          y: 0.3,       // 바닥에서 약간 위에 표시
+          z: location.y  // Unity x -> Three.js z
+>>>>>>> origin/develop
         };
         
         console.log('변환된 화재 위치:', threeJSPosition);

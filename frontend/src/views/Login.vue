@@ -68,14 +68,22 @@
                 </v-form>
               </v-card-text>
               
+<<<<<<< HEAD
               <v-btn
+=======
+              <!-- <v-btn
+>>>>>>> origin/develop
                   color="info"
                   variant="text"
                   block
                   @click="debugNavigate"
                 >
                   디버그: 대시보드로 이동
+<<<<<<< HEAD
                 </v-btn>
+=======
+                </v-btn> -->
+>>>>>>> origin/develop
 
               <v-card-text class="text-center text-caption text-medium-emphasis">
                 &copy; {{ new Date().getFullYear() }} FEST 프로젝트
@@ -132,10 +140,17 @@
         
         // 토큰 저장
         const token = response.data.access_token;
+<<<<<<< HEAD
         console.log('받은 토큰 형식 확인:', {
           token: token,
           length: token ? token.length : 0
         });
+=======
+        // console.log('받은 토큰 형식 확인:', {
+        //   token: token,
+        //   length: token ? token.length : 0
+        // });
+>>>>>>> origin/develop
         
         localStorage.setItem('authToken', token);
         

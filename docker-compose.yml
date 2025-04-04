@@ -1,0 +1,80 @@
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+      - redis
+      - mosquitto
+    networks:
+      - fest_network
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ./frontend/nginx/conf.d:/etc/nginx/conf.d
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+    networks:
+      - fest_network
+    restart: unless-stopped
+
+  postgres:
+    image: postgis/postgis:17-3.5
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_HOST}
+      - POSTGRES_PASSWORD=${DB_HOST_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d
+    networks:
+      - fest_network
+    restart: unless-stopped
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - fest_network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  mosquitto:
+    image: eclipse-mosquitto
+    ports:
+      - "1883:1883" # 모든 인터페이스에 바인딩
+      - "9001:9001" # 모든 인터페이스에 바인딩
+    volumes:
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - fest_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  mosquitto_data:
+  mosquitto_log:
+
+networks:
+  fest_network:
+    driver: bridge

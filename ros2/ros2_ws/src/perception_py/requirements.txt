@@ -1,0 +1,18 @@
+# Core dependencies
+# PyTorch with CUDA 11.8
+# Install using: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+torch>=2.4.1
+torchvision>=0.19.1
+torchaudio>=2.4.1
+ultralytics>=8.3.98
+numpy>=1.24.0
+opencv-python>=4.8.0
+
+# ROS2 dependencies
+rclpy>=3.0.0
+cv-bridge>=3.0.0
+sensor-msgs>=3.0.0
+std-msgs>=3.0.0
+
+# Additional utilities
+thop>=2.0.14 
