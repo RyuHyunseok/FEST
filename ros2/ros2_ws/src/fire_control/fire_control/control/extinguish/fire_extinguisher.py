@@ -11,3 +11,21 @@ class FireExtinguisher:
         self.spray_publisher = self.node.create_publisher(String, '/extinguisher/spray', 10)
         self.is_spraying = False  # 분사 상태
         self.complete_publisher = self.node.create_publisher(String, '/extinguisher/complete', 10)
+
+    def start_spray(self):
+        """소화액 분사 시작"""
+        if not self.is_spraying:  
+            self.is_spraying = True
+            spray_msg = String()
+            spray_msg.data = "spraying_start"
+            self.spray_publisher.publish(spray_msg)
+            self.node.get_logger().info("Starting spray!")
+
+    def stop_spray(self):
+        """소화액 분사 중지"""
+        if self.is_spraying:  
+            self.is_spraying = False
+            spray_msg = String()
+            spray_msg.data = "spraying_stop"
+            self.spray_publisher.publish(spray_msg)
+            self.node.get_logger().info("Stopping spray!")
