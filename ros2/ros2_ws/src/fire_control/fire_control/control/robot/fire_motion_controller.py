@@ -13,9 +13,9 @@ class FireMotionController:
         )
         
         # PD 제어 관련 변수
-        self.proportional_gain = 0.1
-        self.derivative_gain = 0.05
-        self.max_rotation_speed = 20.0
+        self.proportional_gain = 0.2
+        self.derivative_gain = 0.08
+        self.max_rotation_speed = 30.0
         self.previous_error = 0
         self.deadzone = 30
     
