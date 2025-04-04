@@ -73,8 +73,10 @@ public:
                         has_global_path_(false),
                         has_cost_map_(false),
                         has_odom_(false),
-                        lookahead_distance_(10.0),  // 4m 전방 거리 고려
-                        collision_threshold_(50)   // 비용 맵에서 70 이상은 충돌로 간주
+                        lookahead_distance_(5.0),  // 4m 전방 거리 고려
+                        collision_threshold_(50),   // 비용 맵에서 70 이상은 충돌로 간주
+                        is_replanning_(false),      // 재계획 상태 플래그 추가
+                        replan_cooldown_(2.0)       // 재계획 대기 시간 (초)
     {
         // 지역 경로 발행자
         local_path_pub_ = create_publisher<nav_msgs::msg::Path>("local_path", 10);
@@ -142,6 +144,15 @@ private:
             return;
         }
 
+        // 현재 시간 확인
+        auto current_time = now();
+        
+        // 재계획 중이고 아직 대기 시간이 지나지 않았다면 현재 경로 유지
+        if (is_replanning_ && 
+            (current_time - last_replan_time_).seconds() < replan_cooldown_) {
+            return;
+        }
+
         // 1. 현재 로봇 위치에서 가장 가까운 전역 경로 지점 찾기
         size_t closest_idx = find_closest_point();
         
@@ -189,6 +200,10 @@ private:
         
         // 3. 충돌이 감지된 경우 다익스트라 알고리즘으로 우회 경로 계획
         if (collision_detected && collision_idx > closest_idx) {
+            // 재계획 상태 설정
+            is_replanning_ = true;
+            last_replan_time_ = current_time;
+            
             // 시작점 (충돌 이전 지점)
             double start_x = global_path_.poses[closest_idx].pose.position.x;
             double start_y = global_path_.poses[closest_idx].pose.position.y;
@@ -231,6 +246,7 @@ private:
                 // 계산된 경로 발행
                 local_path_pub_->publish(new_path);
                 RCLCPP_INFO(get_logger(), "Published local path with %zu points (Dijkstra)", new_path.poses.size());
+                is_replanning_ = false;  // 성공적으로 경로를 찾았을 때만 재계획 상태 해제
             } else {
                 // 우회 경로를 찾지 못한 경우, 비어있는 경로 발행
                 RCLCPP_WARN(get_logger(), "Failed to find a bypass path");
@@ -238,9 +254,11 @@ private:
                 empty_path.header.frame_id = "map";
                 empty_path.header.stamp = now();
                 local_path_pub_->publish(empty_path);
+                is_replanning_ = false;  // 우회 경로를 찾지 못한 경우 재계획 상태 해제
             }
         } else {
-            // 충돌이 없는 경우, 추출한 서브패스 발행
+            is_replanning_ = false;  // 충돌이 없는 경우 재계획 상태 해제
+            // 추출한 서브패스 발행
             local_path_pub_->publish(subpath);
             RCLCPP_INFO(get_logger(), "Published local path with %zu points (No collision)", subpath.poses.size());
         }
@@ -443,6 +461,10 @@ private:
     bool has_global_path_;
     bool has_cost_map_;
     bool has_odom_;
+    
+    bool is_replanning_;              // 재계획 진행 중 여부
+    double replan_cooldown_;          // 재계획 대기 시간
+    rclcpp::Time last_replan_time_;   // 마지막 재계획 시간
 };
 
 int main(int argc, char** argv)

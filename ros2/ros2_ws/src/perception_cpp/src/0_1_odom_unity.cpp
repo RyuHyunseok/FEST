@@ -69,14 +69,16 @@ private:
     
     if (first_msg_) {
       // 초기 위치 저장
-      initial_pose_ = *msg;
+      // initial_pose_ = *msg;
       first_msg_ = false;
     }
     
     // Odometry 메시지 업데이트 - 상대 위치 계산
     odom_msg_.header.stamp = current_time;
-    odom_msg_.pose.pose.position.x = msg->position.x - initial_pose_.position.x;
-    odom_msg_.pose.pose.position.y = msg->position.y - initial_pose_.position.y;
+    // odom_msg_.pose.pose.position.x = msg->position.x - initial_pose_.position.x;
+    // odom_msg_.pose.pose.position.y = msg->position.y - initial_pose_.position.y;
+    odom_msg_.pose.pose.position.x = msg->position.x;
+    odom_msg_.pose.pose.position.y = msg->position.y;
     odom_msg_.pose.pose.position.z = 0.0;  // z는 0으로 고정
     odom_msg_.pose.pose.orientation = msg->orientation;
     
