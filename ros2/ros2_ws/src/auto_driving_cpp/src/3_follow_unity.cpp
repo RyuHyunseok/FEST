@@ -48,8 +48,9 @@ public:
                        has_path_(false),
                        has_odom_(false),
                        has_goal_(false),
+                       is_goal_reached_(false),
                        linear_speed_(3.0),    // 선속도를 1.0으로 수정
-                       max_angular_speed_(90.0),  // 최대 각속도
+                       max_angular_speed_(90.0),  // 최대 각속도를 180도/초로 증가
                        goal_tolerance_(2.0),      // 목표점 도달 허용 오차 (0.3m)
                        path_point_selection_(PATH_INDEX),  // 기본값으로 마지막 점 선택
                        path_point_index_(10)  // 기본 인덱스
@@ -118,8 +119,11 @@ private:
         tf2::Matrix3x3 m(q);
         double roll, pitch, yaw;
         m.getRPY(roll, pitch, yaw);
-        // 단순히 라디안에서 도로만 변환
-        current_yaw_ = yaw * RAD_TO_DEG;  // 180도 회전 제거
+        
+        // Unity 좌표계에서는 방향이 반대로 해석되어야 함
+        current_yaw_ = normalize_angle(-yaw * RAD_TO_DEG);  // 부호를 반대로 변경
+        
+        RCLCPP_INFO(get_logger(), "Current yaw (degrees): %.2f", current_yaw_);
     }
 
     void goal_callback(const geometry_msgs::msg::Point::SharedPtr msg)
@@ -138,35 +142,46 @@ private:
 
         // 현재 로봇 위치
         double robot_x = odom_.pose.pose.position.x;
-        double robot_z = odom_.pose.pose.position.y;
+        double robot_y = odom_.pose.pose.position.y;
 
         // 목표점까지의 거리 확인
         double dist_to_goal = std::hypot(
             goal_point_.x - robot_x,
-            goal_point_.y - robot_z
+            goal_point_.y - robot_y
         );
 
         RCLCPP_INFO(get_logger(), 
             "Distance to goal: %.2f, Goal(x,z): (%.2f, %.2f), Robot(x,z): (%.2f, %.2f)",
             dist_to_goal,
             goal_point_.x, goal_point_.y,
-            robot_x, robot_z
+            robot_x, robot_y
         );
 
-        // 목표점에 도달했는지 확인
-        if (dist_to_goal < goal_tolerance_) {
-            RCLCPP_INFO(get_logger(), "Goal reached!");
-            // 목표 도달 메시지 발행
+        // 목표점 도달 상태 확인 및 발행
+        bool current_goal_status = (dist_to_goal < goal_tolerance_);
+        
+        // 상태가 변경되었을 때만 발행
+        if (current_goal_status != is_goal_reached_) {
+            is_goal_reached_ = current_goal_status;
             auto msg = std_msgs::msg::Bool();
-            msg.data = true;
+            msg.data = is_goal_reached_;
             goal_reached_pub_->publish(msg);
+            
+            if (is_goal_reached_) {
+                RCLCPP_INFO(get_logger(), "Goal reached!");
+            } else {
+                RCLCPP_INFO(get_logger(), "Moving away from goal");
+            }
+        }
+
+        if (is_goal_reached_) {
             stop_robot();
             return;
         }
 
         // 다음 경로점 찾기
         geometry_msgs::msg::Point target_point;
-        if (!find_next_point(robot_x, robot_z, target_point)) {
+        if (!find_next_point(robot_x, robot_y, target_point)) {
             RCLCPP_WARN(get_logger(), "No valid path point found");
             stop_robot();
             return;
@@ -174,38 +189,38 @@ private:
 
         // 로봇 기준 목표점 좌표 계산 (x,z 평면)
         double dx = target_point.x - robot_x;
-        double dz = target_point.y - robot_z;
+        double dy = target_point.y - robot_y;
 
-        RCLCPP_INFO(get_logger(), 
-            "Target relative position - dx: %.2f, dz: %.2f",
-            dx, dz
-        );
-
-        // 각도 계산에서 180도 회전 제거
-        double target_angle = std::atan2(dz, dx) * RAD_TO_DEG;  // 180도 회전 제거
-        double angle_diff = normalize_angle(target_angle);
+        // 이동 방향 각도 계산 (기존 코드 유지)
+        double movement_direction = std::atan2(dy, dx) * RAD_TO_DEG;
+        
+        // 로봇의 현재 방향과 이동 방향의 차이 계산 (y축 방향 반전)
+        double angle_diff = normalize_angle(-movement_direction - current_yaw_);  // movement_direction에 음수를 취함
+        
+        // 각도 차이가 ±10도 이내면 회전하지 않음
+        double dead_zone = 10.0;
+        double angular_speed = 0.0;
+        
+        if (std::abs(angle_diff) > dead_zone) {
+            double p_gain = 0.5;
+            angular_speed = std::min(std::max(angle_diff * p_gain, -max_angular_speed_), max_angular_speed_);
+        }
 
         // 속도 명령 생성
         geometry_msgs::msg::Twist cmd_vel;
         
-        // 단순한 선속도 계산
-        double angle_rad = angle_diff * DEG_TO_RAD;
-        // cmd_vel.linear.x = linear_speed_ * std::cos(angle_rad);  // sin -> cos로 변경
-        // cmd_vel.linear.y = 0.0;
-        // cmd_vel.linear.z = linear_speed_ * std::sin(angle_rad);  // cos -> sin으로 변경
-
-        cmd_vel.linear.x = -linear_speed_ * std::sin(angle_rad);  // sin -> cos로 변경
+        // 목표 방향으로 직접 이동 (로봇의 방향과 무관하게)
+        cmd_vel.linear.x = -linear_speed_ * std::sin(movement_direction * DEG_TO_RAD);
         cmd_vel.linear.y = 0.0;
-        cmd_vel.linear.z = linear_speed_ * std::cos(angle_rad);  // cos -> sin으로 변경
-
-
-        cmd_vel.angular.y = 0.0;
+        cmd_vel.linear.z = linear_speed_ * std::cos(movement_direction * DEG_TO_RAD);
+        
+        cmd_vel.angular.y = angular_speed;
 
         // 명령 발행
         cmd_vel_pub_->publish(cmd_vel);
     }
 
-    bool find_next_point(double robot_x, double robot_z, geometry_msgs::msg::Point& target)
+    bool find_next_point(double robot_x, double robot_y, geometry_msgs::msg::Point& target)
     {
         if (path_.poses.empty()) return false;
 
@@ -225,8 +240,8 @@ private:
                 for (size_t i = 0; i < path_.poses.size(); ++i) {
                     const auto& pose = path_.poses[i];
                     double dx = pose.pose.position.x - robot_x;
-                    double dz = pose.pose.position.y - robot_z;
-                    double dist = std::hypot(dx, dz);
+                    double dy = pose.pose.position.y - robot_y;
+                    double dist = std::hypot(dx, dy);
                     if (dist > max_dist) {
                         max_dist = dist;
                         selected_idx = i;
@@ -240,8 +255,8 @@ private:
                 for (size_t i = 0; i < path_.poses.size(); ++i) {
                     const auto& pose = path_.poses[i];
                     double dx = pose.pose.position.x - robot_x;
-                    double dz = pose.pose.position.y - robot_z;
-                    double dist = std::hypot(dx, dz);
+                    double dy = pose.pose.position.y - robot_y;
+                    double dist = std::hypot(dx, dy);
                     if (dist < min_dist) {
                         min_dist = dist;
                         selected_idx = i;
@@ -311,6 +326,7 @@ private:
     bool has_path_;
     bool has_odom_;
     bool has_goal_;
+    bool is_goal_reached_;
 };
 
 int main(int argc, char** argv)

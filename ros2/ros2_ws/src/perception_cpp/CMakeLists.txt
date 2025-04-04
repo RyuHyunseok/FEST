@@ -22,6 +22,11 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
+# MSVC 컴파일러를 위한 UTF-8 설정
+if(MSVC)
+  add_compile_options(/utf-8)
+endif()
+
 #=============================================================================
 # ROS2 의존성 패키지 설정
 #=============================================================================
@@ -37,8 +42,8 @@ find_package(geometry_msgs REQUIRED)
 
 # 외부 라이브러리
 find_package(Eigen3 REQUIRED)
-# find_package(OpenCV REQUIRED)
 find_package(common_utils REQUIRED)
+# find_package(OpenCV REQUIRED)
 
 #=============================================================================
 # ROS2 노드 실행 파일 생성
@@ -89,8 +94,9 @@ ament_target_dependencies(make_path
   "common_utils"
 )
 
-# 2-2. mapping: SLAM 기반 맵 생성
+# mapping 타겟 생성
 add_executable(mapping src/mapping.cpp)
+target_include_directories(mapping PRIVATE ${EIGEN3_INCLUDE_DIRS})
 ament_target_dependencies(mapping
   "rclcpp"
   "nav_msgs"

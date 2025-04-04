@@ -13,6 +13,5 @@ rem colcon build 실행
 colcon build
 
 rem 빌드 완료 후 사용자에게 알림
-echo.
-echo 빌드가 완료되었습니다.
+echo Build completed!
 pause 
