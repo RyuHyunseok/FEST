@@ -1,6 +1,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudio,visualstudiocode,jetbrains,macos,windows,node,python,java,c++,venv,dotenv
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudio,visualstudiocode,jetbrains,macos,windows,node,python,java,c++,venv,dotenv
 
+mosquitto.conf
+
 ### C++ ###
 # Prerequisites
 *.d
