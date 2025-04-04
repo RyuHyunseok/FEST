@@ -1,6 +1,8 @@
 # Created by https://www.toptal.com/developers/gitignore/api/visualstudio,visualstudiocode,jetbrains,macos,windows,node,python,java,c++,venv,dotenv
 # Edit at https://www.toptal.com/developers/gitignore?templates=visualstudio,visualstudiocode,jetbrains,macos,windows,node,python,java,c++,venv,dotenv
 
+mosquitto.conf
+
 ### C++ ###
 # Prerequisites
 *.d
@@ -521,7 +523,9 @@ pyrightconfig.json
 # http://iamzed.com/2009/05/07/a-primer-on-virtualenv/
 [Bb]in
 [Ii]nclude
-!ros2/ros2_ws/src/auto_package_cpp/include/
+!ros2/ros2_ws/src/auto_driving_cpp/include/
+!ros2/ros2_ws/src/common_utils/include/
+!ros2/ros2_ws/src/perception_cpp/include/
 [Ll]ib
 [Ll]ib64
 [Ll]ocal

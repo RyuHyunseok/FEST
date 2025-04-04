@@ -23,6 +23,11 @@ setup(
             'smooth_position_publisher = test_topic_publisher_py.smooth_position_publisher:main',
             'test_scan_topic_publisher = test_topic_publisher_py.test_scan_topic_publisher:main',
             'test_turtlebot_status_topic_publisher = test_topic_publisher_py.test_turtlebot_status_topic_publisher:main',
+<<<<<<< HEAD
+=======
+            'topic_monitor = test_topic_publisher_py.topic_monitor:main',
+            'test_cmd_vel_topic_publisher = test_topic_publisher_py.test_cmd_vel_topic_publisher:main',
+>>>>>>> origin/develop
         ],
     },
 )

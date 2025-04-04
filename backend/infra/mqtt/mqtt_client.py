@@ -1,5 +1,12 @@
 import paho.mqtt.client as mqtt
 import atexit
+from core.config import MQTT_HOST, MQTT_PORT
+
+import os
+from dotenv import load_dotenv
+
+# .env 파일 로드
+# load_dotenv()
 
 # MQTT 클라이언트 생성
 mqtt_client = mqtt.Client()
@@ -9,7 +16,19 @@ def connect_mqtt():
     """브로커에 연결하는 함수"""
     global is_connected
     try:
+<<<<<<< HEAD
         mqtt_client.connect("localhost", 1883, 60)
+=======
+        # 환경 변수에서 호스트와 포트 가져오기, 기본값 설정
+        # mqtt_host = os.getenv('MQTT_HOST', 'localhost')
+        # mqtt_port = int(os.getenv('MQTT_PORT', 1883))
+        # mqtt_client.connect(mqtt_host, mqtt_port, 60)
+
+        # mqtt_client.connect("localhost", 1883, 60)
+
+        mqtt_client.connect(MQTT_HOST, MQTT_PORT, 60)
+        
+>>>>>>> origin/develop
         is_connected = True
         print("MQTT 브로커에 연결되었습니다.")
     except Exception as e:
