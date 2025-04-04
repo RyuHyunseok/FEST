@@ -29,3 +29,7 @@ class FireExtinguisher:
             spray_msg.data = "spraying_stop"
             self.spray_publisher.publish(spray_msg)
             self.node.get_logger().info("Stopping spray!")
+
+            # 소화 완료 메시지 발행
+            complete_msg = String(data="fire_extinguished")
+            self.complete_publisher.publish(complete_msg)
