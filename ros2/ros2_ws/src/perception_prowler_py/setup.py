@@ -2,7 +2,7 @@ from setuptools import setup
 import os
 from glob import glob
 
-package_name = 'unity_camera'
+package_name = 'perception_prowler_py'
 
 setup(
     name=package_name,
@@ -23,8 +23,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'opencv_yolo = unity_camera.opencv_yolo:main',
-            'fire_particle_listener = unity_camera.fire_particle_listener:main'
+            'opencv_yolo = perception_prowler_py.opencv_yolo:main',
+            'fire_particle_listener = perception_prowler_py.fire_particle_listener:main'
         ],
     },
 )

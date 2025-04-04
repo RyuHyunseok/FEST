@@ -108,17 +108,17 @@ class OpenCVYOLO(Node):
                         self.get_logger().info(f'Published message: {msg.data} (Confidence: {conf:.1f}%)')
             
             # 바운딩 박스 정보 전송(Unity에서 사용)
-            if detected_boxes:
-                bbox_msg = String()
-                bbox_data = {
-                    "timestamp": time.time(),
-                    "image_width": self.display_width,
-                    "image_height": new_height,
-                    "boxes": detected_boxes
-                }
-                bbox_msg.data = json.dumps(bbox_data)
-                self.bbox_publisher.publish(bbox_msg)
-                self.get_logger().info(f'Published {len(detected_boxes)} bounding boxes')
+            # if detected_boxes:
+            bbox_msg = String()
+            bbox_data = {
+                "timestamp": time.time(),
+                "image_width": self.display_width,
+                "image_height": new_height,
+                "boxes": detected_boxes
+            }
+            bbox_msg.data = json.dumps(bbox_data)
+            self.bbox_publisher.publish(bbox_msg)
+            self.get_logger().info(f'Published {len(detected_boxes)} bounding boxes')
             
             # 실제 탐지된 사람 수 표시 (신뢰도 임계값을 통과한 사람만 카운트)
             cv2.putText(flipped_vertical, f'People detected: {len(detected_boxes)}', (10, 30), 
