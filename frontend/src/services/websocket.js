@@ -2,7 +2,12 @@
 
 // WebSocket 서버 URL
 // const WS_BASE_URL = 'ws://localhost:8000';
-const WS_BASE_URL = 'wss://j12d106.p.ssafy.io';
+// const WS_BASE_URL = 'wss://j12d106.p.ssafy.io';
+
+const IS_PRODUCTION = import.meta.env.VITE_ENVIRONMENT === 'production';
+const WS_BASE_URL = IS_PRODUCTION 
+  ? 'wss://j12d106.p.ssafy.io' 
+  : 'ws://localhost:8000';
 
 class WebSocketService {
   constructor() {

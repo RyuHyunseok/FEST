@@ -5,15 +5,25 @@ import asyncio
 from contextlib import asynccontextmanager
 
 from jose import JWTError, jwt
-from core.config import SECRET_KEY, ALGORITHM
+from core.config import SECRET_KEY, ALGORITHM, REDIS_PORT, REDIS_DB, REDIS_HOST
 
 import os
 
-# Redis 클라이언트 설정
+# # Redis 클라이언트 설정
+# redis_client = redis.Redis(
+#     host=os.getenv('REDIS_HOST', 'localhost'), 
+#     port=int(os.getenv('REDIS_PORT', 6379)), 
+#     db=int(os.getenv('REDIS_DB', 0)), 
+#     decode_responses=True
+# )
+
+# Redis 연결 설정
+# redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+
 redis_client = redis.Redis(
-    host=os.getenv('REDIS_HOST', 'localhost'), 
-    port=int(os.getenv('REDIS_PORT', 6379)), 
-    db=int(os.getenv('REDIS_DB', 0)), 
+    host=REDIS_HOST, 
+    port=REDIS_PORT, 
+    db=REDIS_DB, 
     decode_responses=True
 )
 

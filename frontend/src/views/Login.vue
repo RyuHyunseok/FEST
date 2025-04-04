@@ -68,14 +68,14 @@
                 </v-form>
               </v-card-text>
               
-              <v-btn
+              <!-- <v-btn
                   color="info"
                   variant="text"
                   block
                   @click="debugNavigate"
                 >
                   디버그: 대시보드로 이동
-                </v-btn>
+                </v-btn> -->
 
               <v-card-text class="text-center text-caption text-medium-emphasis">
                 &copy; {{ new Date().getFullYear() }} FEST 프로젝트
@@ -132,10 +132,10 @@
         
         // 토큰 저장
         const token = response.data.access_token;
-        console.log('받은 토큰 형식 확인:', {
-          token: token,
-          length: token ? token.length : 0
-        });
+        // console.log('받은 토큰 형식 확인:', {
+        //   token: token,
+        //   length: token ? token.length : 0
+        // });
         
         localStorage.setItem('authToken', token);
         

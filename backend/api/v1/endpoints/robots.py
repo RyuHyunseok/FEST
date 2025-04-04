@@ -12,13 +12,25 @@ from schemas.robot import RobotCreate, RobotPosition as RobotPositionSchema, Rob
 from infra.mqtt.mqtt_client import mqtt_client
 import os
 
+from core.config import REDIS_PORT, REDIS_DB, REDIS_HOST
+
 router = APIRouter()
 
-# Redis 클라이언트
+# # Redis 클라이언트
+# redis_client = redis.Redis(
+#     host=os.getenv('REDIS_HOST', 'localhost'), 
+#     port=int(os.getenv('REDIS_PORT', 6379)), 
+#     db=int(os.getenv('REDIS_DB', 0)), 
+#     decode_responses=True
+# )
+
+# Redis 연결 설정
+# redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+
 redis_client = redis.Redis(
-    host=os.getenv('REDIS_HOST', 'localhost'), 
-    port=int(os.getenv('REDIS_PORT', 6379)), 
-    db=int(os.getenv('REDIS_DB', 0)), 
+    host=REDIS_HOST, 
+    port=REDIS_PORT, 
+    db=REDIS_DB, 
     decode_responses=True
 )
 

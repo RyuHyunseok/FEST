@@ -13,14 +13,24 @@ from geoalchemy2.functions import ST_MakePoint
 import datetime
 
 from models.mission import FirefightingMission
-
+from core.config import REDIS_HOST, REDIS_DB, REDIS_PORT
 import os
 
+# # Redis 연결 설정
+# redis_client = redis.Redis(
+#     host=os.getenv('REDIS_HOST', 'localhost'), 
+#     port=int(os.getenv('REDIS_PORT', 6379)), 
+#     db=int(os.getenv('REDIS_DB', 0)), 
+#     decode_responses=True
+# )
+
 # Redis 연결 설정
+# redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+
 redis_client = redis.Redis(
-    host=os.getenv('REDIS_HOST', 'localhost'), 
-    port=int(os.getenv('REDIS_PORT', 6379)), 
-    db=int(os.getenv('REDIS_DB', 0)), 
+    host=REDIS_HOST, 
+    port=REDIS_PORT, 
+    db=REDIS_DB, 
     decode_responses=True
 )
 

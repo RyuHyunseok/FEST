@@ -8,10 +8,7 @@ import signal
 import sys
 import os
 
-from starlette.middleware.trustedhost import TrustedHostMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from fastapi.responses import RedirectResponse
-from fastapi import Request
+from core.config import ENVIRONMENT, IS_DEVELOPMENT
 
 # 종료 시그널 핸들러
 def signal_handler(sig, frame):
@@ -48,24 +45,36 @@ app = FastAPI(
 )
 
 # HTTPS 리디렉트 미들웨어
-class HttpsRedirectMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        if request.headers.get("x-forwarded-proto", "http") == "http":
-            url = request.url.replace(scheme="https")
-            return RedirectResponse(url._url, status_code=301)
-        return await call_next(request)
-    
-# FastAPI 앱 생성 후 미들웨어 추가
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])  # 도메인 신뢰 설정
-app.add_middleware(HttpsRedirectMiddleware)  # HTTP 요청을 HTTPS로 변환
+if not IS_DEVELOPMENT:
+    from starlette.middleware.trustedhost import TrustedHostMiddleware
+    from starlette.middleware.base import BaseHTTPMiddleware
+    from fastapi.responses import RedirectResponse
+    from fastapi import Request
+
+    class HttpsRedirectMiddleware(BaseHTTPMiddleware):
+        async def dispatch(self, request: Request, call_next):
+            if request.headers.get("x-forwarded-proto", "http") == "http":
+                url = request.url.replace(scheme="https")
+                return RedirectResponse(url._url, status_code=301)
+            return await call_next(request)
+        
+    # FastAPI 앱 생성 후 미들웨어 추가
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])  # 도메인 신뢰 설정
+    app.add_middleware(HttpsRedirectMiddleware)  # HTTP 요청을 HTTPS로 변환
 
 # CORS 미들웨어 추가
+
+allowed_origins = ["http://localhost:5173"]  # 개발 환경 기본값
+
+if not IS_DEVELOPMENT:
+    # 배포 환경에서는 실제 도메인 추가
+    allowed_origins.extend([
+        "https://j12d106.p.ssafy.io"
+    ])
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "https://j12d106.p.ssafy.io",
-                   ],  # Vite 기본 개발 서버 포트
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -76,7 +85,8 @@ app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/")
 async def root():
-    return {"message": "FastAPI + MQTT + Redis + WebSocket Running!"}
+    return {"message": "FastAPI + MQTT + Redis + WebSocket Running!",
+        "environment": ENVIRONMENT}
 
 # WebSocket 설정
 setup_websocket(app)
