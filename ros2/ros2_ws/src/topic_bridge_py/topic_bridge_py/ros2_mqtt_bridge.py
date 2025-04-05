@@ -110,8 +110,8 @@ class ROS2ToMQTTBridge(Node):
         prowler_data = json.loads(msg.data)
 
         prowler_info = {
-            prowler_data['prowler_id'],
-            prowler_data['count'],
+            "prowler_id": prowler_data['prowler_id'],
+            "count": prowler_data['count'],
             # prowler_data['detected_at']
         }
 
