@@ -99,7 +99,8 @@ class OpenCVYOLO(Node):
                     if not self.has_published:
                         # 객체가 탐지되면 ROS2 메시지 발행(Web에서 사용 )
                         message_data = {
-                            "prowler_id": 1
+                            "prowler_id": 1,
+                            "count": len(detected_boxes)
                         }
                         msg = String()
                         msg.data = json.dumps(message_data)
