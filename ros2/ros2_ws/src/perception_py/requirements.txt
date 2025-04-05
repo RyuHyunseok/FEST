@@ -9,10 +9,10 @@ numpy>=1.24.0
 opencv-python>=4.8.0
 
 # ROS2 dependencies
-rclpy>=3.0.0
-cv-bridge>=3.0.0
-sensor-msgs>=3.0.0
-std-msgs>=3.0.0
+# rclpy>=3.0.0
+cv-bridge>=1.13.0.post0
+# sensor-msgs>=3.0.0
+# std-msgs>=3.0.0
 
 # Additional utilities
-thop>=2.0.14 
+thop>=0.1.1
