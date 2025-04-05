@@ -1,18 +1,139 @@
-# Core dependencies
-# PyTorch with CUDA 11.8
-# Install using: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-torch>=2.4.1
-torchvision>=0.19.1
-torchaudio>=2.4.1
-ultralytics>=8.3.98
-numpy>=1.24.0
-opencv-python>=4.8.0
+# <<<<<<< HEAD
+# # Core dependencies
+# # PyTorch with CUDA 11.8
+# # Install using: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# torch>=2.4.1
+# torchvision>=0.19.1
+# torchaudio>=2.4.1
+# ultralytics>=8.3.98
+# numpy>=1.24.0
+# opencv-python>=4.8.0
 
-# ROS2 dependencies
-# rclpy>=3.0.0
-cv-bridge>=1.13.0.post0
-# sensor-msgs>=3.0.0
-# std-msgs>=3.0.0
+# # ROS2 dependencies
+# # rclpy>=3.0.0
+# cv-bridge>=1.13.0.post0
+# # sensor-msgs>=3.0.0
+# # std-msgs>=3.0.0
 
-# Additional utilities
-thop>=0.1.1
+# # Additional utilities
+# thop>=0.1.1
+# =======
+annotated-types==0.7.0
+anyio==4.5.2
+catkin-pkg==0.4.23
+certifi==2025.1.31
+cffi==1.17.1
+charset-normalizer==3.4.1
+colcon-cmake==0.2.29
+colcon-common-extensions==0.3.0
+colcon-core==0.19.0
+colcon-defaults==0.2.9
+colcon-devtools==0.3.0
+colcon-library-path==0.2.1
+colcon-metadata==0.2.5
+colcon-notification==0.3.0
+colcon-output==0.2.13
+colcon-package-information==0.4.0
+colcon-package-selection==0.2.10
+colcon-parallel-executor==0.3.0
+colcon-pkg-config==0.1.0
+colcon-powershell==0.4.0
+colcon-python-setup-py==0.2.9
+colcon-recursive-crawl==0.2.3
+colcon-ros==0.5.0
+colcon-test-result==0.3.8
+colorama==0.4.6
+coloredlogs==15.0.1
+contourpy==1.1.1
+coverage==7.6.1
+cryptography==3.4.7
+cv-bridge==1.13.0.post0
+cycler==0.12.1
+distlib==0.3.9
+distro==1.9.0
+docutils==0.20.1
+empy==3.3.4
+exceptiongroup==1.2.2
+fastapi==0.115.12
+filelock==3.16.1
+flatbuffers==25.2.10
+fonttools==4.56.0
+fsspec==2025.3.0
+gevent==24.2.1
+greenlet==3.1.1
+humanfriendly==10.0
+idna==3.10
+ifcfg==0.21
+importlib_resources==6.4.5
+iniconfig==2.1.0
+Jinja2==3.1.6
+kiwisolver==1.4.7
+lap==0.5.12
+lark-parser==0.11.3
+lxml==4.6.3
+MarkupSafe==2.1.5
+matplotlib==3.7.5
+mpmath==1.3.0
+netifaces==0.11.0
+networkx==3.1
+numpy==1.21.1
+onnx==1.17.0
+onnxruntime==1.19.2
+onnxslim==0.1.49
+opencv-contrib-python==4.5.3.56
+opencv-python==4.5.3.56
+opencv-python-headless==4.11.0.86
+packaging==20.4
+paho-mqtt==2.1.0
+pandas==2.0.3
+pillow==10.4.0
+pluggy==1.5.0
+protobuf==5.29.4
+psutil==7.0.0
+py-cpuinfo==9.0.0
+pycparser==2.20
+pydantic==2.10.6
+pydantic_core==2.27.2
+pydot==1.4.2
+pyparsing==3.1.4
+PyQt5==5.15.4
+PyQt5-Qt5==5.15.2
+PyQt5_sip==12.15.0
+pyqtgraph==0.12.2
+pyreadline3==3.5.4
+PySide2==5.15.2
+pytest==8.3.5
+pytest-cov==5.0.0
+pytest-repeat==0.9.3
+pytest-rerunfailures==14.0
+python-dateutil==2.9.0.post0
+python-engineio==3.14.2
+python-engineio-client==1.1
+python-socketio==4.6.0
+python-socketio-client==1.1
+pytz==2025.2
+pywin32==310
+PyYAML==6.0.2
+requests==2.32.3
+rospkg==1.6.0
+scipy==1.10.1
+seaborn==0.13.2
+shiboken2==5.15.2
+six==1.17.0
+sniffio==1.3.1
+squaternion==0.3.1
+starlette==0.44.0
+sympy==1.13.3
+tomli==2.2.1
+torch==2.4.1+cu118
+torchaudio==2.4.1+cu118
+torchvision==0.19.1+cu118
+tqdm==4.67.1
+typing_extensions==4.13.0
+tzdata==2025.2
+ultralytics==8.3.98
+ultralytics-thop==2.0.14
+urllib3==2.2.3
+zipp==3.20.2
+zope.event==5.0
+zope.interface==7.2
