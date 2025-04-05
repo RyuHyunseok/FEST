@@ -29,7 +29,8 @@ class ROS2ToMQTTBridge(Node):
         self.mqtt_client.on_connect = self.on_connect
         self.position_topic = f"robots/{self.robot_id}/position"
         self.robot_status_topic = f"robots/{self.robot_id}/status"
-        
+        self.prowler_topic = 'prowler/new'
+
         # MQTT 브로커 연결
         try:
             # self.mqtt_client.connect('j12d106.p.ssafy.io', 1883, 60)
@@ -68,6 +69,13 @@ class ROS2ToMQTTBridge(Node):
             self.fire_status_callback,
             10  # QoS 프로파일
         )
+
+        self.prowler_subscription = self.create_subscription(
+            String,
+            '/prowler/new',
+            self.prowler_callback,
+            10
+        )
         
         # 타이머 설정 (MQTT 연결 상태 체크)
         self.timer = self.create_timer(5.0, self.check_connection)
@@ -97,6 +105,22 @@ class ROS2ToMQTTBridge(Node):
         # 라디안을 도(degree)로 변환
         return math.degrees(yaw)
     
+    def prowler_callback(self, msg):
+        
+        prowler_data = json.loads(msg.data)
+
+        prowler_info = {
+            prowler_data['prowler_id'],
+            prowler_data['count'],
+            # prowler_data['detected_at']
+        }
+
+        serialized_prowler = json.dumps(prowler_info)
+
+        self.mqtt_client.publish(self.prowler_topic, serialized_prowler)
+
+
+
     def position_callback(self, msg):
         """ROS2 위치 토픽 메시지 수신 시 호출되는 콜백"""
         try:
