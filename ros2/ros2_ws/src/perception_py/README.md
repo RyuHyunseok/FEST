@@ -19,9 +19,6 @@ ros2 run perception_py opencv_yolo
 - q
 
 #### Cuda 버전
-- CUDA 12.8
-- Pytorch 2.4.1 (CUDA11.8이 가장 안정적이지만 상관은 없음)
-
 ```
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 ```
