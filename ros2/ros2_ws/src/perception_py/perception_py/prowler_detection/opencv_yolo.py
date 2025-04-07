@@ -26,7 +26,7 @@ class OpenCVYOLO(Node):
         self.bbox_publisher = self.create_publisher(String, '/detection/bbox', 10)
         
         # 객체 탐지 상태 추적을 위한 변수
-        self.has_published = False  # 메시지 발행 여부를 추적하는 플래그
+        self.last_detected_count = 0  # 이전 프레임에서 탐지된 사람 수를 저장하는 변수
 
         # ROS2 subscriber(카메라 이미지) 설정
         self.subscription = self.create_subscription(
@@ -94,21 +94,22 @@ class OpenCVYOLO(Node):
                     # 라벨 표시
                     cv2.putText(flipped_vertical, label, (int(x1), int(y1) - 10), 
                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                    
-                    # 객체가 탐지되고 아직 메시지를 발행하지 않았다면
-                    if not self.has_published:
-                        # 객체가 탐지되면 ROS2 메시지 발행(Web에서 사용 )
-                        message_data = {
-                            "prowler_id": 1
-                        }
-                        msg = String()
-                        msg.data = json.dumps(message_data)
-                        self.publisher.publish(msg)
-                        self.has_published = True  # 발행 상태 업데이트
-                        self.get_logger().info(f'Published message: {msg.data} (Confidence: {conf:.1f}%)')
+            
+            # 현재 프레임에서 탐지된 사람 수가 이전과 다르다면 메시지 발행
+            current_count = len(detected_boxes)
+            if current_count != self.last_detected_count:
+                # 객체가 탐지되면 ROS2 메시지 발행(Web에서 사용)
+                message_data = {
+                    "prowler_id": 1,
+                    "count": current_count
+                }
+                msg = String()
+                msg.data = json.dumps(message_data)
+                self.publisher.publish(msg)
+                self.last_detected_count = current_count  # 현재 카운트로 업데이트
+                self.get_logger().info(f'Published message: {msg.data} (Count changed from {self.last_detected_count} to {current_count})')
             
             # 바운딩 박스 정보 전송(Unity에서 사용)
-            # if detected_boxes:
             bbox_msg = String()
             bbox_data = {
                 "timestamp": time.time(),
