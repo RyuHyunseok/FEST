@@ -2,7 +2,7 @@
 # 프로젝트 기본 설정
 #=============================================================================
 # CMake 최소 버전 요구사항 설정
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 # 프로젝트 이름 설정
 project(auto_driving_cpp)
