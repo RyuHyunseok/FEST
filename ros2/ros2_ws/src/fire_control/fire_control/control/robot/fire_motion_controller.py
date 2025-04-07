@@ -54,12 +54,3 @@ class FireMotionController:
         twist = Twist()
         twist.angular.y = 0.0
         self.cmd_vel_publisher.publish(twist)
-    
-    def start_suppression(self):
-        """화재 진압을 시작하는 함수"""
-        self.node.get_logger().info("Fire suppression started! (FireMotionController)")
-        # 여기서 화재 진압 동작 추가 (예: 소화기 작동, 특정 명령 발행 등)
-    
-    def stop_suppression(self):
-        """화재 진압을 중지하는 함수"""
-        self.node.get_logger().info("Fire suppression stopped! (FireMotionController)")
