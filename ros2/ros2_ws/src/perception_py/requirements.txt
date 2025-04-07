@@ -1,3 +1,23 @@
+# <<<<<<< HEAD
+# # Core dependencies
+# # PyTorch with CUDA 11.8
+# # Install using: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+# torch>=2.4.1
+# torchvision>=0.19.1
+# torchaudio>=2.4.1
+# ultralytics>=8.3.98
+# numpy>=1.24.0
+# opencv-python>=4.8.0
+
+# # ROS2 dependencies
+# # rclpy>=3.0.0
+# cv-bridge>=1.13.0.post0
+# # sensor-msgs>=3.0.0
+# # std-msgs>=3.0.0
+
+# # Additional utilities
+# thop>=0.1.1
+# =======
 annotated-types==0.7.0
 anyio==4.5.2
 catkin-pkg==0.4.23
@@ -56,12 +76,12 @@ matplotlib==3.7.5
 mpmath==1.3.0
 netifaces==0.11.0
 networkx==3.1
-numpy==1.21.1
+numpy>=1.23.0,<=1.25.2
 onnx==1.17.0
 onnxruntime==1.19.2
 onnxslim==0.1.49
 opencv-contrib-python==4.5.3.56
-opencv-python==4.5.3.56
+opencv-python>=4.6.0
 opencv-python-headless==4.11.0.86
 packaging==20.4
 paho-mqtt==2.1.0
@@ -105,9 +125,9 @@ squaternion==0.3.1
 starlette==0.44.0
 sympy==1.13.3
 tomli==2.2.1
-torch==2.4.1+cu118
-torchaudio==2.4.1+cu118
-torchvision==0.19.1+cu118
+torch==2.4.1+cu121
+torchaudio==2.4.1+cu121
+torchvision==0.19.1+cu121
 tqdm==4.67.1
 typing_extensions==4.13.0
 tzdata==2025.2

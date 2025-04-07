@@ -6,6 +6,7 @@ MQTT 토픽                    ->  ROS2 토픽
 robots/fest_1/position      ->  robot/position (Pose2D)
 robots/fest_1/status        ->  robot/battery (Float32)
                              ->  robot/status (String)
+robots/fest_1/command       ->  goal_point (Point)
 incidents/new               ->  goal_point (Point)
 incidents/+/status         ->  incidents/status (String)
 missions/+/update          ->  missions/status (String)
@@ -76,6 +77,7 @@ class MqttToRos2Bridge(Node):
         self.mqtt_client.subscribe([
             ("robots/fest_1/position", 0),
             ("robots/fest_1/status", 0),
+            ("robots/fest_1/command", 0),
             ("incidents/new", 0),
             ("incidents/+/status", 0),
             ("missions/+/update", 0)
@@ -95,6 +97,15 @@ class MqttToRos2Bridge(Node):
                 ros_msg.theta = float(payload['orientation'])
                 self.position_pub.publish(ros_msg)
                 self.get_logger().info(f'Published robot position: {ros_msg}')
+            
+            # 로봇 명령 메시지 처리
+            elif topic == "robots/fest_1/command":
+                location_msg = Point()
+                location_msg.x = float(payload['target']['y'])
+                location_msg.y = - float(payload['target']['x'])
+                location_msg.z = 0.0  # z 좌표는 사용하지 않음
+                self.incident_pub.publish(location_msg)
+                self.get_logger().info(f'Published command target as goal point: {location_msg}')
             
             # 로봇 상태 메시지 처리
             elif topic == "robots/fest_1/status":
