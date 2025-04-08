@@ -56,12 +56,12 @@ class FireImageSubscriber(Node):
             self.offset_publisher.publish(offset_msg)
         
         # 처리된 이미지 표시
-        if processed_image is not None:
-            # 창 크기 조정 및 전체 이미지 표시
-            cv2.namedWindow('Red Detection', cv2.WINDOW_NORMAL)
-            cv2.resizeWindow('Red Detection', processed_image.shape[1], processed_image.shape[0])
-            cv2.imshow('Red Detection', processed_image)
-            cv2.waitKey(1)  # 1ms 대기
+        # if processed_image is not None:
+        #     # 창 크기 조정 및 전체 이미지 표시
+        #     cv2.namedWindow('Red Detection', cv2.WINDOW_NORMAL)
+        #     cv2.resizeWindow('Red Detection', processed_image.shape[1], processed_image.shape[0])
+        #     cv2.imshow('Red Detection', processed_image)
+        #     cv2.waitKey(1)  # 1ms 대기
 
     def detect_red_area(self, image):
         # Convert to HSV color space
@@ -121,7 +121,7 @@ def main(args=None):
     finally:
         node.destroy_node()
         rclpy.shutdown()
-        cv2.destroyAllWindows()  # OpenCV 창 닫기
+        # cv2.destroyAllWindows()  # OpenCV 창 닫기
 
 if __name__ == '__main__':
     main()
