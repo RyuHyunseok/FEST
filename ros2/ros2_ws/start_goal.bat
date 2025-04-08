@@ -7,7 +7,7 @@ call .\install\local_setup.bat
 
 
 @REM start ros2 run topic_bridge_py control_node
-start ros2 run topic_bridge_py goal_control_node
+ros2 run topic_bridge_py goal_control_node
 
 
 rem 4. goal_publisher 노드(좌표 입력을 쉽게 하기 위해 따로 실행)
