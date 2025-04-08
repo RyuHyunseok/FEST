@@ -10,6 +10,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        ('share/' + package_name + '/goal', ['goal/goal_list.txt']),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -23,6 +24,8 @@ setup(
             'mqtt_command_subscriber = topic_bridge_py.mqtt_command_subscriber:main',
             'ros2_mqtt_bridge = topic_bridge_py.ros2_mqtt_bridge:main',
             'mqtt_ros2_bridge = topic_bridge_py.mqtt_ros2_bridge:main',
+            'control_node = topic_bridge_py.4_Control:main',
+            'goal_control_node = topic_bridge_py.4_goal_control:main',
         ],
     },
 )

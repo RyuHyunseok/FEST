@@ -22,7 +22,12 @@ start ros2 run topic_bridge_py mqtt_ros2_bridge
 start ros2 run topic_bridge_py ros2_mqtt_bridge
 
 rem 3. endpoint.py 실행(unity와 연결 실행)
-start ros2 launch ros_tcp_endpoint endpoint.py
+@REM start ros2 launch ros_tcp_endpoint endpoint.py
+start ros2 run ros_tcp_endpoint default_server_endpoint --ros-args -p ROS_IP:=127.0.0.1 -p ROS_TCP_PORT:=10000
+
+
+@REM start ros2 run topic_bridge_py control_node
+@REM start ros2 run topic_bridge_py goal_control_node
 
 
 start ros2 run perception_py opencv_yolo
