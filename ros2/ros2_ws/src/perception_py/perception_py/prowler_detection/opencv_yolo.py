@@ -53,6 +53,10 @@ class OpenCVYOLO(Node):
         
     def image_callback(self, msg):
         try:
+            current_time = time.time()
+            if current_time - self.last_process_time < self.process_interval:
+                return  # 프레임 레이트 제한
+            
             # ROS 메시지 → OpenCV 변환
             cv_image = self.bridge.imgmsg_to_cv2(msg, "rgb8")
             cv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR)
@@ -112,7 +116,7 @@ class OpenCVYOLO(Node):
             # 바운딩 박스 정보 전송(Unity에서 사용)
             bbox_msg = String()
             bbox_data = {
-                "timestamp": time.time(),
+                "timestamp": current_time,
                 "image_width": self.display_width,
                 "image_height": new_height,
                 "boxes": detected_boxes
@@ -126,6 +130,7 @@ class OpenCVYOLO(Node):
                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             
             self.latest_image = flipped_vertical
+            self.last_process_time = current_time
         except Exception as e:
             self.get_logger().error(f'Error processing image: {str(e)}')
 

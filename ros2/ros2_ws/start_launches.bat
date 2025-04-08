@@ -25,9 +25,9 @@ rem 3. endpoint.py 실행(unity와 연결 실행)
 start ros2 launch ros_tcp_endpoint endpoint.py
 
 
-@REM start ros2 run perception_py opencv_yolo
+start ros2 run perception_py opencv_yolo
 
-@REM start ros2 run perception_py fire_image_subscriber
+start ros2 run perception_py fire_image_subscriber
 
 start ros2 run fire_control fire_suppression_node
 
