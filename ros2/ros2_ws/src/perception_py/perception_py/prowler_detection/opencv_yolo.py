@@ -16,7 +16,8 @@ class OpenCVYOLO(Node):
         self.bridge = CvBridge()
         # YOLOv8 모델 로드 및 사람 클래스만 탐지하도록 설정
         self.model = YOLO('yolov8n.pt')
-        self.model.to('cuda')  # GPU 사용 설정
+        # self.model.to('cpu')  # GPU 사용 설정
+        self.model.to('cuda')  # CPU 사용 설정
         self.conf_threshold = 0.5  # 신뢰도 임계치
         self.model.classes = [0]  # COCO 데이터셋에서 person 클래스는 0번
         

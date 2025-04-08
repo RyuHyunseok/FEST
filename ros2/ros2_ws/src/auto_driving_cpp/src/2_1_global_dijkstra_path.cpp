@@ -10,6 +10,7 @@
  *    - /cost_map: 전역 비용 맵 데이터
  *    - /odom: 로봇의 현재 위치 정보
  *    - /goal_point: 목표점 좌표
+ *    - /goal_reached: 목표점에 도달했는지 여부
  * 
  * 3. 발행 토픽:
  *    - /global_path: 계획된 전역 경로
@@ -33,6 +34,7 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "std_msgs/msg/bool.hpp"
 // #include "auto_package_cpp/mqtt_handler.hpp"
 #include <queue>
 #include <vector>
@@ -66,7 +68,8 @@ struct NodeHash {
 
 class DijkstraPlanner : public rclcpp::Node {
 public:
-    DijkstraPlanner() : Node("dijkstra_planner"), has_map_(false), has_robot_pose_(false), has_goal_(false) {
+    DijkstraPlanner() : Node("dijkstra_planner"), has_map_(false), has_robot_pose_(false), has_goal_(false), 
+                        goal_reached_(false), can_reset_(true) {
         // 구독자 생성
         map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
             "/cost_map", 1, std::bind(&DijkstraPlanner::map_callback, this, std::placeholders::_1));
@@ -109,6 +112,10 @@ public:
         odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
             "odom", 10, std::bind(&DijkstraPlanner::odom_callback, this, std::placeholders::_1));
 
+        // goal_reached 토픽 구독 추가
+        goal_reached_sub_ = create_subscription<std_msgs::msg::Bool>(
+            "/goal_reached", 10, std::bind(&DijkstraPlanner::goal_reached_callback, this, std::placeholders::_1));
+
         // 발행자 생성
         path_pub_ = create_publisher<nav_msgs::msg::Path>("/global_path", 1);
         marker_pub_ = create_publisher<visualization_msgs::msg::MarkerArray>("/planning_points", 1);
@@ -121,6 +128,7 @@ private:
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
     rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr goal_sub_;  // ROS2 토픽 구독자
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr goal_reached_sub_;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
     // std::unique_ptr<MqttHandler> mqtt_handler_;
@@ -128,6 +136,8 @@ private:
     bool has_map_;
     bool has_robot_pose_;
     bool has_goal_;
+    bool goal_reached_;
+    bool can_reset_;
     
     // 로봇의 초기 위치와 현재 위치 저장
     double robot_init_x_;
@@ -146,6 +156,11 @@ private:
         goal_x_ = static_cast<int>((msg->x - map_.info.origin.position.x) / map_.info.resolution);
         goal_y_ = static_cast<int>((msg->y - map_.info.origin.position.y) / map_.info.resolution);
         has_goal_ = true;
+        
+        // 새 목표점을 받았을 때 goal_reached_를 false로 설정하고 can_reset_을 true로 설정
+        // goal_reached_ = false;
+        // can_reset_ = true;
+        
         RCLCPP_INFO(get_logger(), "Received new goal point: map coordinates (%d, %d)", goal_x_, goal_y_);
         
         // 새로운 목표점이 설정되면 경로 계획 실행
@@ -227,6 +242,39 @@ private:
         current_robot_x_ = msg->pose.pose.position.x;
         current_robot_y_ = msg->pose.pose.position.y;
         has_robot_pose_ = true;
+    }
+
+    void goal_reached_callback(const std_msgs::msg::Bool::SharedPtr msg) {
+        // 이전 상태와 현재 상태가 다를 때만 처리
+        if (msg->data != goal_reached_) {
+            goal_reached_ = msg->data;
+            
+            if (goal_reached_ && can_reset_) {
+                // 목표에 도달했을 때 경로 초기화
+                RCLCPP_INFO(get_logger(), "Goal reached! Resetting path...");
+                reset_path();
+                can_reset_ = false; // 다음 초기화는 goal_reached가 false로 바뀐 후 다시 true가 될 때만 가능
+            } else if (!goal_reached_) {
+                // 목표에서 멀어졌을 때 초기화 가능 상태로 변경
+                RCLCPP_INFO(get_logger(), "Moving away from goal, reset will be available next time goal is reached");
+                can_reset_ = true;
+            }
+        }
+    }
+    
+    void reset_path() {
+        // 경로 초기화 로직
+        // 여기서는 빈 경로를 발행하여 초기화
+        nav_msgs::msg::Path empty_path;
+        empty_path.header.frame_id = "map";
+        empty_path.header.stamp = now();
+        path_pub_->publish(empty_path);
+        
+        // 마커도 초기화
+        visualization_msgs::msg::MarkerArray empty_markers;
+        marker_pub_->publish(empty_markers);
+        
+        RCLCPP_INFO(get_logger(), "Path has been reset");
     }
 
     void publish_points_marker(const DijkstraNode& start, const DijkstraNode& goal) {

@@ -47,7 +47,7 @@ class MqttToRos2Bridge(Node):
         self.incident_pub = self.create_publisher(
             Point,
             # 'incidents/new',
-            'goal_point',
+            'goal_point_mqtt',
             10
         )
         
