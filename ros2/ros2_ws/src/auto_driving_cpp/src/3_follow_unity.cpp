@@ -49,7 +49,7 @@ public:
                        has_odom_(false),
                        has_goal_(false),
                        is_goal_reached_(false),
-                       linear_speed_(3.0),    // 선속도를 1.0으로 수정
+                       linear_speed_(5.0),    // 선속도를 1.0으로 수정
                        max_angular_speed_(90.0),  // 최대 각속도를 180도/초로 증가
                        goal_tolerance_(5.0),      // 목표점 도달 허용 오차 (0.3m)
                        path_point_selection_(PATH_INDEX),  // 기본값으로 마지막 점 선택

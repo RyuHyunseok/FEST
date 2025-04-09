@@ -54,15 +54,44 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # goal_publisher_manual 노드는 원본에서 주석 처리되어 있어서 여기서도 주석 처리합니다
-        # Node(
-        #     package='auto_driving_cpp',
-        #     executable='goal_publisher_manual',
-        #     name='goal_publisher_manual',
-        #     output='screen'
-        # ),
+        # 3. MQTT 브릿지 노드들
+        Node(
+            package='topic_bridge_py',
+            executable='mqtt_ros2_bridge',
+            name='mqtt_ros2_bridge',
+            output='screen'
+        ),
 
-        # 3. TCP 엔드포인트 노드
+        Node(
+            package='topic_bridge_py',
+            executable='ros2_mqtt_bridge',
+            name='ros2_mqtt_bridge',
+            output='screen'
+        ),
+
+        # 4. 화재 감지 관련 노드들
+        Node(
+            package='perception_py',
+            executable='opencv_yolo',
+            name='opencv_yolo',
+            output='screen'
+        ),
+
+        Node(
+            package='perception_py',
+            executable='fire_image_subscriber',
+            name='fire_image_subscriber',
+            output='screen'
+        ),
+
+        Node(
+            package='fire_control',
+            executable='fire_suppression_node',
+            name='fire_suppression_node',
+            output='screen'
+        ),
+
+        # 5. TCP 엔드포인트 노드
         Node(
             package="ros_tcp_endpoint",
             executable="default_server_endpoint",

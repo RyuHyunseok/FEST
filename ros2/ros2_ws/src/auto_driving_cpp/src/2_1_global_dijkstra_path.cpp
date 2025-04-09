@@ -69,7 +69,7 @@ struct NodeHash {
 class DijkstraPlanner : public rclcpp::Node {
 public:
     DijkstraPlanner() : Node("dijkstra_planner"), has_map_(false), has_robot_pose_(false), has_goal_(false), 
-                        goal_reached_(false), can_reset_(true) {
+                        goal_reached_(false), can_reset_(true), start_x_(0), start_y_(0) {
         // 구독자 생성
         map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
             "/cost_map", 1, std::bind(&DijkstraPlanner::map_callback, this, std::placeholders::_1));
@@ -147,7 +147,9 @@ private:
     double current_robot_y_;
     double current_robot_theta_;
     
-    // 목표점 저장
+    // 시작점과 목표점 저장
+    int start_x_;
+    int start_y_;
     int goal_x_;
     int goal_y_;
 
@@ -174,11 +176,11 @@ private:
         }
 
         // 로봇의 현재 위치를 맵 좌표로 변환하여 시작점으로 설정
-        int start_x = static_cast<int>((current_robot_x_ - map_.info.origin.position.x) / map_.info.resolution);
-        int start_y = static_cast<int>((current_robot_y_ - map_.info.origin.position.y) / map_.info.resolution);
+        start_x_ = static_cast<int>((current_robot_x_ - map_.info.origin.position.x) / map_.info.resolution);
+        start_y_ = static_cast<int>((current_robot_y_ - map_.info.origin.position.y) / map_.info.resolution);
         
         // 시작점과 목표점의 cost 값 확인
-        int start_index = start_y * map_.info.width + start_x;
+        int start_index = start_y_ * map_.info.width + start_x_;
         int goal_index = goal_y_ * map_.info.width + goal_x_;
         
         if (start_index < 0 || start_index >= static_cast<int>(map_.data.size()) ||
@@ -191,10 +193,10 @@ private:
         int goal_cost = map_.data[goal_index];
         
         RCLCPP_INFO(get_logger(), "Start position (%d, %d) cost: %d, Goal position (%d, %d) cost: %d", 
-                    start_x, start_y, start_cost, goal_x_, goal_y_, goal_cost);
+                    start_x_, start_y_, start_cost, goal_x_, goal_y_, goal_cost);
         
         // 시작점과 목표점 설정
-        DijkstraNode start(start_x, start_y);
+        DijkstraNode start(start_x_, start_y_);
         DijkstraNode goal(goal_x_, goal_y_);
 
         // 시작점과 목표점 마커 발행
@@ -206,7 +208,7 @@ private:
             RCLCPP_INFO(get_logger(), "Path published with %zu points", path.size());
         } else {
             RCLCPP_WARN(get_logger(), "No path found between (%d, %d) and (%d, %d)", 
-                        start_x, start_y, goal_x_, goal_y_);
+                        start_x_, start_y_, goal_x_, goal_y_);
         }
     }
 
@@ -435,6 +437,23 @@ private:
         }
         
         int cost = map_.data[index];
+        
+        // 시작점과의 거리 계산
+        double distance_to_start = std::sqrt(std::pow(x - start_x_, 2) + std::pow(y - start_y_, 2)) * map_.info.resolution;
+        
+        // 시작점 반경 5m 이내라면 완전한 장애물(100)만 통과 불가능으로 처리
+        if (distance_to_start <= 5.0) {
+            if (cost >= 100) return -1;
+            return 0.0;
+        }
+        
+        // 목표점과의 거리 계산
+        double distance_to_goal = std::sqrt(std::pow(x - goal_x_, 2) + std::pow(y - goal_y_, 2)) * map_.info.resolution;
+        
+        // 목표점 반경 5m 이내라면 패널티 무시
+        if (distance_to_goal <= 5.0) {
+            return 0.0;
+        }
         
         // 완전한 장애물(100)만 통과 불가능으로 처리
         if (cost >= 10) return -1;
