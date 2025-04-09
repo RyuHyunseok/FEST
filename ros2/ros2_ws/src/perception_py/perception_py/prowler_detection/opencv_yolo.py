@@ -18,7 +18,7 @@ class OpenCVYOLO(Node):
         self.model = YOLO('yolov8n.pt')
         # self.model.to('cpu')  # GPU 사용 설정
         self.model.to('cuda')  # CPU 사용 설정
-        self.conf_threshold = 0.5  # 신뢰도 임계치
+        self.conf_threshold = 0.6  # 신뢰도 임계치
         self.model.classes = [0]  # COCO 데이터셋에서 person 클래스는 0번
         
         # ROS2 publisher(침입자 감지 알림) 설정
@@ -28,6 +28,7 @@ class OpenCVYOLO(Node):
         
         # 객체 탐지 상태 추적을 위한 변수
         self.last_detected_count = 0  # 이전 프레임에서 탐지된 사람 수를 저장하는 변수
+        self.first_detection = True  # 처음 탐지 여부를 추적하는 플래그
 
         # ROS2 subscriber(카메라 이미지) 설정
         self.subscription = self.create_subscription(
@@ -102,8 +103,8 @@ class OpenCVYOLO(Node):
             
             # 현재 프레임에서 탐지된 사람 수가 이전과 다르다면 메시지 발행
             current_count = len(detected_boxes)
-            if current_count != self.last_detected_count:
-                # 객체가 탐지되면 ROS2 메시지 발행(Web에서 사용)
+            if current_count > 0 and self.first_detection:
+                # 객체가 처음 탐지되면 ROS2 메시지 발행(Web에서 사용)
                 message_data = {
                     "prowler_id": 1,
                     "count": current_count
@@ -111,8 +112,8 @@ class OpenCVYOLO(Node):
                 msg = String()
                 msg.data = json.dumps(message_data)
                 self.publisher.publish(msg)
-                self.last_detected_count = current_count  # 현재 카운트로 업데이트
-                self.get_logger().info(f'Published message: {msg.data} (Count changed from {self.last_detected_count} to {current_count})')
+                self.first_detection = False  # 처음 탐지 후 플래그를 False로 설정
+                self.get_logger().info(f'Published message: {msg.data} (First detection)')
             
             # 바운딩 박스 정보 전송(Unity에서 사용)
             bbox_msg = String()
@@ -124,7 +125,6 @@ class OpenCVYOLO(Node):
             }
             bbox_msg.data = json.dumps(bbox_data)
             self.bbox_publisher.publish(bbox_msg)
-            self.get_logger().info(f'Published {len(detected_boxes)} bounding boxes')
             
             # 실제 탐지된 사람 수 표시 (신뢰도 임계값을 통과한 사람만 카운트)
             cv2.putText(flipped_vertical, f'People detected: {len(detected_boxes)}', (10, 30), 
