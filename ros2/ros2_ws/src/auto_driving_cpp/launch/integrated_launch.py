@@ -3,7 +3,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     return LaunchDescription([
-        # 1. perception_cpp 패키지 노드들
+        # 1. perception_cpp
         Node(
             package='perception_cpp',
             executable='odom_unity',
@@ -32,7 +32,7 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # 2. auto_driving_cpp 패키지 노드들
+        # 2. auto_driving_cpp
         Node(
             package='auto_driving_cpp',
             executable='global_dijkstra_path',
@@ -54,7 +54,7 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # 3. MQTT 브릿지 노드들
+        # 3. MQTT
         Node(
             package='topic_bridge_py',
             executable='mqtt_ros2_bridge',
@@ -69,7 +69,7 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # 4. 화재 감지 관련 노드들
+        # 4. fire_image
         Node(
             package='perception_py',
             executable='opencv_yolo',
@@ -91,7 +91,7 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # 5. TCP 엔드포인트 노드
+        # 5. TCP
         Node(
             package="ros_tcp_endpoint",
             executable="default_server_endpoint",
