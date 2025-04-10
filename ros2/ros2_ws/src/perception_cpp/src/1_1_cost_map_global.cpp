@@ -76,13 +76,13 @@ public:
             std::chrono::seconds(1),
             std::bind(&GlobalCostMapNode::timer_callback, this));
             
-        RCLCPP_INFO(this->get_logger(), "global_cost_map start.");
+        // RCLCPP_INFO(this->get_logger(), "global_cost_map start.");
     }
 
     ~GlobalCostMapNode() {
         // 노드 종료 시 Cost Map 저장
         saveCostMap();
-        RCLCPP_INFO(this->get_logger(), "Cost map saved to: %s", cost_map_filename_.c_str());
+        // RCLCPP_INFO(this->get_logger(), "Cost map saved to: %s", cost_map_filename_.c_str());
     }
 
 private:
@@ -102,7 +102,7 @@ private:
     bool load_map() {
         std::ifstream file(base_map_filename_, std::ios::binary);
         if (!file) {
-            RCLCPP_ERROR(this->get_logger(), "map file open error: %s", base_map_filename_.c_str());
+            // RCLCPP_ERROR(this->get_logger(), "map file open error: %s", base_map_filename_.c_str());
             return false;
         }
 
@@ -110,7 +110,7 @@ private:
         std::string magic;
         file >> magic;
         if (magic != "P5") {
-            RCLCPP_ERROR(this->get_logger(), "wrong pgm file format.");
+            // RCLCPP_ERROR(this->get_logger(), "wrong pgm file format.");
             return false;
         }
 
@@ -119,7 +119,7 @@ private:
         file.ignore(1);  // 개행 문자 건너뛰기
 
         if (width != map_meta_.width || height != map_meta_.height) {
-            RCLCPP_ERROR(this->get_logger(), "map size is not same.");
+            // RCLCPP_ERROR(this->get_logger(), "map size is not same.");
             return false;
         }
 
@@ -180,7 +180,7 @@ private:
     void saveCostMap() {
         std::ofstream file(cost_map_filename_, std::ios::binary);
         if (!file) {
-            RCLCPP_ERROR(this->get_logger(), "Failed to open cost map file for writing");
+            // RCLCPP_ERROR(this->get_logger(), "Failed to open cost map file for writing");
             return;
         }
 

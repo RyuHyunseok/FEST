@@ -176,10 +176,10 @@ private:
                 }
                 
                 current_local_path_ = updated_current_path;
-                RCLCPP_DEBUG(this->get_logger(), "Keeping current path with offset: %.2f", current_offset);
+                // RCLCPP_DEBUG(this->get_logger(), "Keeping current path with offset: %.2f", current_offset);
             } else {
                 // 장애물이 감지된 경우에만 새로운 경로 선택
-                RCLCPP_INFO(this->get_logger(), "Obstacle detected on current path - selecting new path");
+                // RCLCPP_INFO(this->get_logger(), "Obstacle detected on current path - selecting new path");
                 select_best_path(candidate_paths);
                 // 새로 선택된 경로의 오프셋 저장
                 for (size_t i = 0; i < lateral_steps_.size(); ++i) {
@@ -191,7 +191,7 @@ private:
             }
         } else {
             // 처음 시작할 때는 새로운 경로 선택
-            RCLCPP_INFO(this->get_logger(), "Initial path selection");
+            // RCLCPP_INFO(this->get_logger(), "Initial path selection");
             select_best_path(candidate_paths);
             // 초기 경로의 오프셋 저장
             for (size_t i = 0; i < lateral_steps_.size(); ++i) {
@@ -221,7 +221,7 @@ private:
         for (size_t i = 0; i < candidate_paths.size(); ++i) {
             // 장애물이 있는 경로는 제외
             if (check_obstacles_on_path(candidate_paths[i])) {
-                RCLCPP_DEBUG(this->get_logger(), "Path %zu has obstacles", i);
+                // RCLCPP_DEBUG(this->get_logger(), "Path %zu has obstacles", i);
                 continue;
             }
 
@@ -243,13 +243,13 @@ private:
             current_local_path_ = candidate_paths[best_idx];
             prev_offset = lateral_steps_[best_idx];  // 선택된 경로의 오프셋 저장
             
-            RCLCPP_INFO(this->get_logger(), 
-                "Selected new path - offset: %.2f, cost: %.2f", 
-                lateral_steps_[best_idx], 
-                min_cost);
+            // RCLCPP_INFO(this->get_logger(), 
+            //     "Selected new path - offset: %.2f, cost: %.2f", 
+            //     lateral_steps_[best_idx], 
+            //     min_cost);
         } else {
             // 유효한 경로를 찾지 못한 경우, 현재 경로 유지
-            RCLCPP_WARN(this->get_logger(), "No valid path found - keeping current path");
+            // RCLCPP_WARN(this->get_logger(), "No valid path found - keeping current path");
         }
     }
 
@@ -279,9 +279,9 @@ private:
                 double distance = std::sqrt(dx*dx + dy*dy);
 
                 if (distance < robot_radius_ * 1.5) {
-                    RCLCPP_INFO(this->get_logger(), 
-                        "Obstacle detected near path at (%.2f, %.2f), distance: %.2f",
-                        obstacle_x, obstacle_y, distance);
+                    // RCLCPP_INFO(this->get_logger(), 
+                    //     "Obstacle detected near path at (%.2f, %.2f), distance: %.2f",
+                    //     obstacle_x, obstacle_y, distance);
                     return true;
                 }
             }

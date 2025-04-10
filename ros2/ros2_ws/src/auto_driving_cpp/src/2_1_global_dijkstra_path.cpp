@@ -120,7 +120,7 @@ public:
         path_pub_ = create_publisher<nav_msgs::msg::Path>("/global_path", 1);
         marker_pub_ = create_publisher<visualization_msgs::msg::MarkerArray>("/planning_points", 1);
 
-        RCLCPP_INFO(get_logger(), "Dijkstra Planner initialized");
+        // RCLCPP_INFO(get_logger(), "Dijkstra Planner initialized");
     }
 
 private:
@@ -163,7 +163,7 @@ private:
         // goal_reached_ = false;
         // can_reset_ = true;
         
-        RCLCPP_INFO(get_logger(), "Received new goal point: map coordinates (%d, %d)", goal_x_, goal_y_);
+        // RCLCPP_INFO(get_logger(), "Received new goal point: map coordinates (%d, %d)", goal_x_, goal_y_);
         
         // 새로운 목표점이 설정되면 경로 계획 실행
         plan_current_path();
@@ -171,7 +171,7 @@ private:
 
     void plan_current_path() {
         if (!has_map_ || !has_robot_pose_ || !has_goal_) {
-            RCLCPP_WARN(get_logger(), "Waiting for map, robot pose, and goal...");
+            // RCLCPP_WARN(get_logger(), "Waiting for map, robot pose, and goal...");
             return;
         }
 
@@ -185,15 +185,15 @@ private:
         
         if (start_index < 0 || start_index >= static_cast<int>(map_.data.size()) ||
             goal_index < 0 || goal_index >= static_cast<int>(map_.data.size())) {
-            RCLCPP_ERROR(get_logger(), "Start or goal position is outside map bounds");
+            // RCLCPP_ERROR(get_logger(), "Start or goal position is outside map bounds");
             return;
         }
         
         int start_cost = map_.data[start_index];
         int goal_cost = map_.data[goal_index];
         
-        RCLCPP_INFO(get_logger(), "Start position (%d, %d) cost: %d, Goal position (%d, %d) cost: %d", 
-                    start_x_, start_y_, start_cost, goal_x_, goal_y_, goal_cost);
+        // RCLCPP_INFO(get_logger(), "Start position (%d, %d) cost: %d, Goal position (%d, %d) cost: %d", 
+        //             start_x_, start_y_, start_cost, goal_x_, goal_y_, goal_cost);
         
         // 시작점과 목표점 설정
         DijkstraNode start(start_x_, start_y_);
@@ -205,10 +205,10 @@ private:
         auto path = plan_path(start, goal);
         if (!path.empty()) {
             publish_path(path);
-            RCLCPP_INFO(get_logger(), "Path published with %zu points", path.size());
+            // RCLCPP_INFO(get_logger(), "Path published with %zu points", path.size());
         } else {
-            RCLCPP_WARN(get_logger(), "No path found between (%d, %d) and (%d, %d)", 
-                        start_x_, start_y_, goal_x_, goal_y_);
+            // RCLCPP_WARN(get_logger(), "No path found between (%d, %d) and (%d, %d)", 
+            //             start_x_, start_y_, goal_x_, goal_y_);
         }
     }
 
@@ -231,7 +231,7 @@ private:
             status_info += " | Goal Position: (" + std::to_string(goal_x_) + ", " + std::to_string(goal_y_) + ")";
         }
         
-        RCLCPP_INFO(get_logger(), "%s", status_info.c_str());
+        // RCLCPP_INFO(get_logger(), "%s", status_info.c_str());
         
         // 맵이 5번 업데이트될 때마다 경로 재계획
         //if (has_goal_ && map_update_count_ % 5 == 0) {
@@ -253,12 +253,12 @@ private:
             
             if (goal_reached_ && can_reset_) {
                 // 목표에 도달했을 때 경로 초기화
-                RCLCPP_INFO(get_logger(), "Goal reached! Resetting path...");
+                // RCLCPP_INFO(get_logger(), "Goal reached! Resetting path...");
                 reset_path();
                 can_reset_ = false; // 다음 초기화는 goal_reached가 false로 바뀐 후 다시 true가 될 때만 가능
             } else if (!goal_reached_) {
                 // 목표에서 멀어졌을 때 초기화 가능 상태로 변경
-                RCLCPP_INFO(get_logger(), "Moving away from goal, reset will be available next time goal is reached");
+                // RCLCPP_INFO(get_logger(), "Moving away from goal, reset will be available next time goal is reached");
                 can_reset_ = true;
             }
         }
@@ -276,7 +276,7 @@ private:
         visualization_msgs::msg::MarkerArray empty_markers;
         marker_pub_->publish(empty_markers);
         
-        RCLCPP_INFO(get_logger(), "Path has been reset");
+        // RCLCPP_INFO(get_logger(), "Path has been reset");
     }
 
     void publish_points_marker(const DijkstraNode& start, const DijkstraNode& goal) {
@@ -357,9 +357,9 @@ private:
 
             // 목표에 도달했는지 확인
             if (current->x == goal.x && current->y == goal.y) {
-                RCLCPP_INFO(get_logger(), 
-                    "Path found after %d iterations, expanded %d nodes", 
-                    current_iteration, nodes_expanded);
+                // RCLCPP_INFO(get_logger(), 
+                //     "Path found after %d iterations, expanded %d nodes", 
+                //     current_iteration, nodes_expanded);
                 return reconstruct_path(current);
             }
 
@@ -411,16 +411,16 @@ private:
 
             // 디버그 정보
             if (current_iteration % 1000 == 0) {
-                RCLCPP_DEBUG(get_logger(), 
-                    "Iteration %d: Expanded %d nodes, Queue size: %zu", 
-                    current_iteration, nodes_expanded, open_queue.size());
+                // RCLCPP_DEBUG(get_logger(), 
+                //     "Iteration %d: Expanded %d nodes, Queue size: %zu", 
+                //     current_iteration, nodes_expanded, open_queue.size());
             }
         }
 
         if (current_iteration >= max_iterations) {
-            RCLCPP_WARN(get_logger(), 
-                "Path planning exceeded maximum iterations (%d), expanded %d nodes", 
-                max_iterations, nodes_expanded);
+            // RCLCPP_WARN(get_logger(), 
+            //     "Path planning exceeded maximum iterations (%d), expanded %d nodes", 
+            //     max_iterations, nodes_expanded);
         }
 
         // 경로를 찾지 못함
@@ -431,8 +431,8 @@ private:
         if (!has_map_) return -1;
         int index = y * map_.info.width + x;
         if (index < 0 || index >= static_cast<int>(map_.data.size())) {
-            RCLCPP_ERROR(get_logger(), "Invalid map index: %d (max: %zu)", 
-                        index, map_.data.size());
+            // RCLCPP_ERROR(get_logger(), "Invalid map index: %d (max: %zu)", 
+            //             index, map_.data.size());
             return -1;
         }
         

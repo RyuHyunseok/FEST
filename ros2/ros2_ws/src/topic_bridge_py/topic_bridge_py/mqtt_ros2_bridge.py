@@ -30,8 +30,8 @@ class MqttToRos2Bridge(Node):
         self.mqtt_client.on_message = self.on_mqtt_message
         
         # MQTT 브로커 연결
-        self.mqtt_client.connect('j12d106.p.ssafy.io', 1883, 60)
-        # self.mqtt_client.connect('localhost', 1883, 60)
+        # self.mqtt_client.connect('j12d106.p.ssafy.io', 1883, 60)
+        self.mqtt_client.connect('localhost', 1883, 60)
         self.mqtt_client.loop_start()
 
     def on_mqtt_connect(self, client, userdata, flags, rc):

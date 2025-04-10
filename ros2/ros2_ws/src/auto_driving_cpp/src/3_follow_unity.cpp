@@ -49,7 +49,7 @@ public:
                        has_odom_(false),
                        has_goal_(false),
                        is_goal_reached_(false),
-                       linear_speed_(3.5),    // 선속도를 1.0으로 수정
+                       linear_speed_(2.5),    // 선속도를 1.0으로 수정
                        max_angular_speed_(90.0),  // 최대 각속도를 180도/초로 증가
                        goal_tolerance_(5.0),      // 목표점 도달 허용 오차 (0.3m)
                        path_point_selection_(PATH_INDEX),  // 기본값으로 마지막 점 선택
@@ -75,7 +75,7 @@ public:
         // Control loop timer
         timer_ = create_wall_timer(50ms, std::bind(&UnityController::control_loop, this));
 
-        RCLCPP_INFO(get_logger(), "Unity Controller initialized");
+        // RCLCPP_INFO(get_logger(), "Unity Controller initialized");
     }
 
 private:
@@ -100,7 +100,7 @@ private:
         has_path_ = !msg->poses.empty();
         
         if (!has_path_) {
-            RCLCPP_WARN(get_logger(), "Received empty path");
+            // RCLCPP_WARN(get_logger(), "Received empty path");
             stop_robot();
         }
     }
@@ -123,14 +123,14 @@ private:
         // Unity 좌표계에서는 방향이 반대로 해석되어야 함
         current_yaw_ = normalize_angle(-yaw * RAD_TO_DEG);  // 부호를 반대로 변경
         
-        RCLCPP_INFO(get_logger(), "Current yaw (degrees): %.2f", current_yaw_);
+        // RCLCPP_INFO(get_logger(), "Current yaw (degrees): %.2f", current_yaw_);
     }
 
     void goal_callback(const geometry_msgs::msg::Point::SharedPtr msg)
     {
         goal_point_ = *msg;
         has_goal_ = true;
-        RCLCPP_INFO(get_logger(), "Received new goal point: (%.2f, %.2f)", msg->x, msg->z);
+        // RCLCPP_INFO(get_logger(), "Received new goal point: (%.2f, %.2f)", msg->x, msg->z);
     }
 
     void control_loop()
@@ -150,12 +150,12 @@ private:
             goal_point_.y - robot_y
         );
 
-        RCLCPP_INFO(get_logger(), 
-            "Distance to goal: %.2f, Goal(x,z): (%.2f, %.2f), Robot(x,z): (%.2f, %.2f)",
-            dist_to_goal,
-            goal_point_.x, goal_point_.y,
-            robot_x, robot_y
-        );
+        // RCLCPP_INFO(get_logger(), 
+        //     "Distance to goal: %.2f, Goal(x,z): (%.2f, %.2f), Robot(x,z): (%.2f, %.2f)",
+        //     dist_to_goal,
+        //     goal_point_.x, goal_point_.y,
+        //     robot_x, robot_y
+        // );
 
         // 목표점 도달 상태 확인 및 발행
         bool current_goal_status = (dist_to_goal < goal_tolerance_);
@@ -168,9 +168,9 @@ private:
             goal_reached_pub_->publish(msg);
             
             if (is_goal_reached_) {
-                RCLCPP_INFO(get_logger(), "Goal reached!");
+                // RCLCPP_INFO(get_logger(), "Goal reached!");
             } else {
-                RCLCPP_INFO(get_logger(), "Moving away from goal");
+                // RCLCPP_INFO(get_logger(), "Moving away from goal");
             }
         }
 
@@ -182,7 +182,7 @@ private:
         // 다음 경로점 찾기
         geometry_msgs::msg::Point target_point;
         if (!find_next_point(robot_x, robot_y, target_point)) {
-            RCLCPP_WARN(get_logger(), "No valid path point found");
+            // RCLCPP_WARN(get_logger(), "No valid path point found");
             stop_robot();
             return;
         }
