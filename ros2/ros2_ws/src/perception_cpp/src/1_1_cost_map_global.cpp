@@ -49,7 +49,7 @@ public:
         cost_map_filename_ = COST_MAP_FILE;
         
         // 파라미터 설정
-        inflation_radius_ = 2.0;  // 30cm
+        inflation_radius_ = 3.0;  // 30cm
         cost_scaling_factor_ = 1.0;
         
         // 맵 메타데이터 설정

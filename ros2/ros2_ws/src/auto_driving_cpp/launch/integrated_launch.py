@@ -98,4 +98,11 @@ def generate_launch_description():
             emulate_tty=True,
             parameters=[{"ROS_IP": "0.0.0.0"}, {"ROS_TCP_PORT": 10000}],
         ),
+
+        # Node(
+        #     package='topic_bridge_py',
+        #     executable='goal_control_node',
+        #     name='goal_control_node',
+        #     output='screen'
+        # ),
     ]) 
