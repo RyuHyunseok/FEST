@@ -81,10 +81,9 @@ class TcpServer(Node):
             self.publishers_table = publishers
         if subscribers is not None:
             self.subscribers_table = subscribers
-        server_thread = threading.Thread(target=self.listen_loop)
-        # Exit the server thread when the main thread terminates
-        server_thread.daemon = True
-        server_thread.start()
+        self.server_thread = threading.Thread(target=self.listen_loop)
+        self.server_thread.daemon = True
+        self.server_thread.start()
 
     def listen_loop(self):
         """
@@ -174,18 +173,25 @@ class TcpServer(Node):
 
     def destroy_nodes(self):
         """
-            Clean up all of the nodes
+        Clean up all of the nodes
         """
-        for ros_node in self.publishers_table.values():
-            ros_node.destroy_node()
-        for ros_node in self.subscribers_table.values():
-            ros_node.destroy_node()
-        for ros_node in self.ros_services_table.values():
-            ros_node.destroy_node()
-        for ros_node in self.unity_services_table.values():
-            ros_node.destroy_node()
-
-        self.destroy_node()
+        try:
+            for ros_node in self.publishers_table.values():
+                if ros_node is not None:
+                    ros_node.destroy_node()
+            for ros_node in self.subscribers_table.values():
+                if ros_node is not None:
+                    ros_node.destroy_node()
+            for ros_node in self.ros_services_table.values():
+                if ros_node is not None:
+                    ros_node.destroy_node()
+            for ros_node in self.unity_services_table.values():
+                if ros_node is not None:
+                    ros_node.destroy_node()
+        except Exception as e:
+            self.logerr(f"Error during node destruction: {e}")
+        finally:
+            self.destroy_node()
 
 
 class SysCommands:

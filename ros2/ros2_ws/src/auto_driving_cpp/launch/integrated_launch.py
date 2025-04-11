@@ -3,7 +3,30 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     return LaunchDescription([
-        # 1. perception_cpp 패키지 노드들
+        # 5. TCP
+        Node(
+            package="ros_tcp_endpoint",
+            executable="default_server_endpoint",
+            emulate_tty=True,
+            parameters=[{"ROS_IP": "0.0.0.0"}, {"ROS_TCP_PORT": 10000}],
+        ),
+
+        # 3. MQTT
+        Node(
+            package='topic_bridge_py',
+            executable='mqtt_ros2_bridge',
+            name='mqtt_ros2_bridge',
+            output='screen'
+        ),
+
+        Node(
+            package='topic_bridge_py',
+            executable='ros2_mqtt_bridge',
+            name='ros2_mqtt_bridge',
+            output='screen'
+        ),
+
+        # 1. perception_cpp
         Node(
             package='perception_cpp',
             executable='odom_unity',
@@ -32,7 +55,7 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # 2. auto_driving_cpp 패키지 노드들
+        # 2. auto_driving_cpp
         Node(
             package='auto_driving_cpp',
             executable='global_dijkstra_path',
@@ -54,19 +77,32 @@ def generate_launch_description():
             output='screen'
         ),
 
-        # goal_publisher_manual 노드는 원본에서 주석 처리되어 있어서 여기서도 주석 처리합니다
+        # 4. fire_image
+        Node(
+            package='perception_py',
+            executable='opencv_yolo',
+            name='opencv_yolo',
+            output='screen'
+        ),
+
+        Node(
+            package='perception_py',
+            executable='fire_image_subscriber',
+            name='fire_image_subscriber',
+            output='screen'
+        ),
+
+        Node(
+            package='fire_control',
+            executable='fire_suppression_node',
+            name='fire_suppression_node',
+            output='screen'
+        ),
+
         # Node(
-        #     package='auto_driving_cpp',
-        #     executable='goal_publisher_manual',
-        #     name='goal_publisher_manual',
+        #     package='topic_bridge_py',
+        #     executable='goal_control_node',
+        #     name='goal_control_node',
         #     output='screen'
         # ),
-
-        # 3. TCP 엔드포인트 노드
-        Node(
-            package="ros_tcp_endpoint",
-            executable="default_server_endpoint",
-            emulate_tty=True,
-            parameters=[{"ROS_IP": "0.0.0.0"}, {"ROS_TCP_PORT": 10000}],
-        ),
     ]) 

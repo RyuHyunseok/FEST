@@ -10,6 +10,7 @@
  *    - /cost_map: 전역 비용 맵 데이터
  *    - /odom: 로봇의 현재 위치 정보
  *    - /goal_point: 목표점 좌표
+ *    - /goal_reached: 목표점에 도달했는지 여부
  * 
  * 3. 발행 토픽:
  *    - /global_path: 계획된 전역 경로
@@ -33,6 +34,7 @@
 #include "geometry_msgs/msg/point.hpp"
 #include "visualization_msgs/msg/marker_array.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "std_msgs/msg/bool.hpp"
 // #include "auto_package_cpp/mqtt_handler.hpp"
 #include <queue>
 #include <vector>
@@ -66,7 +68,8 @@ struct NodeHash {
 
 class DijkstraPlanner : public rclcpp::Node {
 public:
-    DijkstraPlanner() : Node("dijkstra_planner"), has_map_(false), has_robot_pose_(false), has_goal_(false) {
+    DijkstraPlanner() : Node("dijkstra_planner"), has_map_(false), has_robot_pose_(false), has_goal_(false), 
+                        goal_reached_(false), can_reset_(true), start_x_(0), start_y_(0) {
         // 구독자 생성
         map_sub_ = create_subscription<nav_msgs::msg::OccupancyGrid>(
             "/cost_map", 1, std::bind(&DijkstraPlanner::map_callback, this, std::placeholders::_1));
@@ -109,11 +112,15 @@ public:
         odom_sub_ = create_subscription<nav_msgs::msg::Odometry>(
             "odom", 10, std::bind(&DijkstraPlanner::odom_callback, this, std::placeholders::_1));
 
+        // goal_reached 토픽 구독 추가
+        goal_reached_sub_ = create_subscription<std_msgs::msg::Bool>(
+            "/goal_reached", 10, std::bind(&DijkstraPlanner::goal_reached_callback, this, std::placeholders::_1));
+
         // 발행자 생성
         path_pub_ = create_publisher<nav_msgs::msg::Path>("/global_path", 1);
         marker_pub_ = create_publisher<visualization_msgs::msg::MarkerArray>("/planning_points", 1);
 
-        RCLCPP_INFO(get_logger(), "Dijkstra Planner initialized");
+        // RCLCPP_INFO(get_logger(), "Dijkstra Planner initialized");
     }
 
 private:
@@ -121,6 +128,7 @@ private:
     rclcpp::Subscription<nav_msgs::msg::OccupancyGrid>::SharedPtr map_sub_;
     rclcpp::Subscription<geometry_msgs::msg::Point>::SharedPtr goal_sub_;  // ROS2 토픽 구독자
     rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+    rclcpp::Subscription<std_msgs::msg::Bool>::SharedPtr goal_reached_sub_;
     rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr path_pub_;
     rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
     // std::unique_ptr<MqttHandler> mqtt_handler_;
@@ -128,6 +136,8 @@ private:
     bool has_map_;
     bool has_robot_pose_;
     bool has_goal_;
+    bool goal_reached_;
+    bool can_reset_;
     
     // 로봇의 초기 위치와 현재 위치 저장
     double robot_init_x_;
@@ -137,7 +147,9 @@ private:
     double current_robot_y_;
     double current_robot_theta_;
     
-    // 목표점 저장
+    // 시작점과 목표점 저장
+    int start_x_;
+    int start_y_;
     int goal_x_;
     int goal_y_;
 
@@ -146,7 +158,12 @@ private:
         goal_x_ = static_cast<int>((msg->x - map_.info.origin.position.x) / map_.info.resolution);
         goal_y_ = static_cast<int>((msg->y - map_.info.origin.position.y) / map_.info.resolution);
         has_goal_ = true;
-        RCLCPP_INFO(get_logger(), "Received new goal point: map coordinates (%d, %d)", goal_x_, goal_y_);
+        
+        // 새 목표점을 받았을 때 goal_reached_를 false로 설정하고 can_reset_을 true로 설정
+        // goal_reached_ = false;
+        // can_reset_ = true;
+        
+        // RCLCPP_INFO(get_logger(), "Received new goal point: map coordinates (%d, %d)", goal_x_, goal_y_);
         
         // 새로운 목표점이 설정되면 경로 계획 실행
         plan_current_path();
@@ -154,32 +171,32 @@ private:
 
     void plan_current_path() {
         if (!has_map_ || !has_robot_pose_ || !has_goal_) {
-            RCLCPP_WARN(get_logger(), "Waiting for map, robot pose, and goal...");
+            // RCLCPP_WARN(get_logger(), "Waiting for map, robot pose, and goal...");
             return;
         }
 
         // 로봇의 현재 위치를 맵 좌표로 변환하여 시작점으로 설정
-        int start_x = static_cast<int>((current_robot_x_ - map_.info.origin.position.x) / map_.info.resolution);
-        int start_y = static_cast<int>((current_robot_y_ - map_.info.origin.position.y) / map_.info.resolution);
+        start_x_ = static_cast<int>((current_robot_x_ - map_.info.origin.position.x) / map_.info.resolution);
+        start_y_ = static_cast<int>((current_robot_y_ - map_.info.origin.position.y) / map_.info.resolution);
         
         // 시작점과 목표점의 cost 값 확인
-        int start_index = start_y * map_.info.width + start_x;
+        int start_index = start_y_ * map_.info.width + start_x_;
         int goal_index = goal_y_ * map_.info.width + goal_x_;
         
         if (start_index < 0 || start_index >= static_cast<int>(map_.data.size()) ||
             goal_index < 0 || goal_index >= static_cast<int>(map_.data.size())) {
-            RCLCPP_ERROR(get_logger(), "Start or goal position is outside map bounds");
+            // RCLCPP_ERROR(get_logger(), "Start or goal position is outside map bounds");
             return;
         }
         
         int start_cost = map_.data[start_index];
         int goal_cost = map_.data[goal_index];
         
-        RCLCPP_INFO(get_logger(), "Start position (%d, %d) cost: %d, Goal position (%d, %d) cost: %d", 
-                    start_x, start_y, start_cost, goal_x_, goal_y_, goal_cost);
+        // RCLCPP_INFO(get_logger(), "Start position (%d, %d) cost: %d, Goal position (%d, %d) cost: %d", 
+        //             start_x_, start_y_, start_cost, goal_x_, goal_y_, goal_cost);
         
         // 시작점과 목표점 설정
-        DijkstraNode start(start_x, start_y);
+        DijkstraNode start(start_x_, start_y_);
         DijkstraNode goal(goal_x_, goal_y_);
 
         // 시작점과 목표점 마커 발행
@@ -188,10 +205,10 @@ private:
         auto path = plan_path(start, goal);
         if (!path.empty()) {
             publish_path(path);
-            RCLCPP_INFO(get_logger(), "Path published with %zu points", path.size());
+            // RCLCPP_INFO(get_logger(), "Path published with %zu points", path.size());
         } else {
-            RCLCPP_WARN(get_logger(), "No path found between (%d, %d) and (%d, %d)", 
-                        start_x, start_y, goal_x_, goal_y_);
+            // RCLCPP_WARN(get_logger(), "No path found between (%d, %d) and (%d, %d)", 
+            //             start_x_, start_y_, goal_x_, goal_y_);
         }
     }
 
@@ -214,7 +231,7 @@ private:
             status_info += " | Goal Position: (" + std::to_string(goal_x_) + ", " + std::to_string(goal_y_) + ")";
         }
         
-        RCLCPP_INFO(get_logger(), "%s", status_info.c_str());
+        // RCLCPP_INFO(get_logger(), "%s", status_info.c_str());
         
         // 맵이 5번 업데이트될 때마다 경로 재계획
         //if (has_goal_ && map_update_count_ % 5 == 0) {
@@ -227,6 +244,39 @@ private:
         current_robot_x_ = msg->pose.pose.position.x;
         current_robot_y_ = msg->pose.pose.position.y;
         has_robot_pose_ = true;
+    }
+
+    void goal_reached_callback(const std_msgs::msg::Bool::SharedPtr msg) {
+        // 이전 상태와 현재 상태가 다를 때만 처리
+        if (msg->data != goal_reached_) {
+            goal_reached_ = msg->data;
+            
+            if (goal_reached_ && can_reset_) {
+                // 목표에 도달했을 때 경로 초기화
+                // RCLCPP_INFO(get_logger(), "Goal reached! Resetting path...");
+                reset_path();
+                can_reset_ = false; // 다음 초기화는 goal_reached가 false로 바뀐 후 다시 true가 될 때만 가능
+            } else if (!goal_reached_) {
+                // 목표에서 멀어졌을 때 초기화 가능 상태로 변경
+                // RCLCPP_INFO(get_logger(), "Moving away from goal, reset will be available next time goal is reached");
+                can_reset_ = true;
+            }
+        }
+    }
+    
+    void reset_path() {
+        // 경로 초기화 로직
+        // 여기서는 빈 경로를 발행하여 초기화
+        nav_msgs::msg::Path empty_path;
+        empty_path.header.frame_id = "map";
+        empty_path.header.stamp = now();
+        path_pub_->publish(empty_path);
+        
+        // 마커도 초기화
+        visualization_msgs::msg::MarkerArray empty_markers;
+        marker_pub_->publish(empty_markers);
+        
+        // RCLCPP_INFO(get_logger(), "Path has been reset");
     }
 
     void publish_points_marker(const DijkstraNode& start, const DijkstraNode& goal) {
@@ -307,9 +357,9 @@ private:
 
             // 목표에 도달했는지 확인
             if (current->x == goal.x && current->y == goal.y) {
-                RCLCPP_INFO(get_logger(), 
-                    "Path found after %d iterations, expanded %d nodes", 
-                    current_iteration, nodes_expanded);
+                // RCLCPP_INFO(get_logger(), 
+                //     "Path found after %d iterations, expanded %d nodes", 
+                //     current_iteration, nodes_expanded);
                 return reconstruct_path(current);
             }
 
@@ -361,16 +411,16 @@ private:
 
             // 디버그 정보
             if (current_iteration % 1000 == 0) {
-                RCLCPP_DEBUG(get_logger(), 
-                    "Iteration %d: Expanded %d nodes, Queue size: %zu", 
-                    current_iteration, nodes_expanded, open_queue.size());
+                // RCLCPP_DEBUG(get_logger(), 
+                //     "Iteration %d: Expanded %d nodes, Queue size: %zu", 
+                //     current_iteration, nodes_expanded, open_queue.size());
             }
         }
 
         if (current_iteration >= max_iterations) {
-            RCLCPP_WARN(get_logger(), 
-                "Path planning exceeded maximum iterations (%d), expanded %d nodes", 
-                max_iterations, nodes_expanded);
+            // RCLCPP_WARN(get_logger(), 
+            //     "Path planning exceeded maximum iterations (%d), expanded %d nodes", 
+            //     max_iterations, nodes_expanded);
         }
 
         // 경로를 찾지 못함
@@ -381,12 +431,29 @@ private:
         if (!has_map_) return -1;
         int index = y * map_.info.width + x;
         if (index < 0 || index >= static_cast<int>(map_.data.size())) {
-            RCLCPP_ERROR(get_logger(), "Invalid map index: %d (max: %zu)", 
-                        index, map_.data.size());
+            // RCLCPP_ERROR(get_logger(), "Invalid map index: %d (max: %zu)", 
+            //             index, map_.data.size());
             return -1;
         }
         
         int cost = map_.data[index];
+        
+        // 시작점과의 거리 계산
+        double distance_to_start = std::sqrt(std::pow(x - start_x_, 2) + std::pow(y - start_y_, 2)) * map_.info.resolution;
+        
+        // 시작점 반경 5m 이내라면 완전한 장애물(100)만 통과 불가능으로 처리
+        if (distance_to_start <= 5.0) {
+            if (cost >= 100) return -1;
+            return 0.0;
+        }
+        
+        // 목표점과의 거리 계산
+        double distance_to_goal = std::sqrt(std::pow(x - goal_x_, 2) + std::pow(y - goal_y_, 2)) * map_.info.resolution;
+        
+        // 목표점 반경 5m 이내라면 패널티 무시
+        if (distance_to_goal <= 5.0) {
+            return 0.0;
+        }
         
         // 완전한 장애물(100)만 통과 불가능으로 처리
         if (cost >= 10) return -1;

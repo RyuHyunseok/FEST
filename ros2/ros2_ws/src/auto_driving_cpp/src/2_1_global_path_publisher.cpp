@@ -62,7 +62,7 @@ public:
     // Read path from file
     std::ifstream file(PATH_FILE);
     if (not file.is_open()) {
-      RCLCPP_ERROR(this->get_logger(), "Failed to open path file");
+      // RCLCPP_ERROR(this->get_logger(), "Failed to open path file");
       return;
     }
     

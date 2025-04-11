@@ -489,7 +489,7 @@
     content-icon="mdi-account-alert"
     color="warning"
     heading="침입자가 감지되었습니다!"
-    message="시스템에서 새로운 침입자가 감지되었습니다."
+    :message="`시스템에서 ${currentProwlerCount}명의 침입자가 감지되었습니다.`"
     button-text="확인"
     @confirm="onProwlerAlertConfirm"
   />
@@ -571,6 +571,7 @@ import StatusBadge from '../components/common/StatusBadge.vue';
         showProwlerAlert: false,
         currentFireId: null,
         currentProwlerId: null,
+        currentProwlerCount: 0,
 
         // 이미 알림을 표시한 ID 추적
         notifiedFireIds: new Set(),
@@ -719,6 +720,7 @@ import StatusBadge from '../components/common/StatusBadge.vue';
         if (!oldProwlers[id] && !this.notifiedProwlerIds.has(id)) {
           // 새 침입자 발생 알림 표시
           this.currentProwlerId = id;
+          this.currentProwlerCount = newProwlers[id].count || 1;
           this.showProwlerAlert = true;
           this.notifiedProwlerIds.add(id); // 알림 표시 기록
           

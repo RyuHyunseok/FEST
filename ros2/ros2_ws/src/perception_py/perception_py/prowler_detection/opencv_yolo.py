@@ -16,8 +16,9 @@ class OpenCVYOLO(Node):
         self.bridge = CvBridge()
         # YOLOv8 모델 로드 및 사람 클래스만 탐지하도록 설정
         self.model = YOLO('yolov8n.pt')
-        self.model.to('cuda')  # GPU 사용 설정
-        self.conf_threshold = 0.5  # 신뢰도 임계치
+        # self.model.to('cpu')  # GPU 사용 설정
+        self.model.to('cuda')  # CPU 사용 설정
+        self.conf_threshold = 0.6  # 신뢰도 임계치
         self.model.classes = [0]  # COCO 데이터셋에서 person 클래스는 0번
         
         # ROS2 publisher(침입자 감지 알림) 설정
@@ -26,7 +27,8 @@ class OpenCVYOLO(Node):
         self.bbox_publisher = self.create_publisher(String, '/detection/bbox', 10)
         
         # 객체 탐지 상태 추적을 위한 변수
-        self.has_published = False  # 메시지 발행 여부를 추적하는 플래그
+        self.last_detected_count = 0  # 이전 프레임에서 탐지된 사람 수를 저장하는 변수
+        self.first_detection = True  # 처음 탐지 여부를 추적하는 플래그
 
         # ROS2 subscriber(카메라 이미지) 설정
         self.subscription = self.create_subscription(
@@ -53,6 +55,10 @@ class OpenCVYOLO(Node):
         
     def image_callback(self, msg):
         try:
+            current_time = time.time()
+            if current_time - self.last_process_time < self.process_interval:
+                return  # 프레임 레이트 제한
+            
             # ROS 메시지 → OpenCV 변환
             cv_image = self.bridge.imgmsg_to_cv2(msg, "rgb8")
             cv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR)
@@ -94,37 +100,38 @@ class OpenCVYOLO(Node):
                     # 라벨 표시
                     cv2.putText(flipped_vertical, label, (int(x1), int(y1) - 10), 
                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                    
-                    # 객체가 탐지되고 아직 메시지를 발행하지 않았다면
-                    if not self.has_published:
-                        # 객체가 탐지되면 ROS2 메시지 발행(Web에서 사용 )
-                        message_data = {
-                            "prowler_id": 1
-                        }
-                        msg = String()
-                        msg.data = json.dumps(message_data)
-                        self.publisher.publish(msg)
-                        self.has_published = True  # 발행 상태 업데이트
-                        self.get_logger().info(f'Published message: {msg.data} (Confidence: {conf:.1f}%)')
+            
+            # 현재 프레임에서 탐지된 사람 수가 이전과 다르다면 메시지 발행
+            current_count = len(detected_boxes)
+            if current_count > 0 and self.first_detection:
+                # 객체가 처음 탐지되면 ROS2 메시지 발행(Web에서 사용)
+                message_data = {
+                    "prowler_id": 1,
+                    "count": current_count
+                }
+                msg = String()
+                msg.data = json.dumps(message_data)
+                self.publisher.publish(msg)
+                self.first_detection = False  # 처음 탐지 후 플래그를 False로 설정
+                self.get_logger().info(f'Published message: {msg.data} (First detection)')
             
             # 바운딩 박스 정보 전송(Unity에서 사용)
-            # if detected_boxes:
             bbox_msg = String()
             bbox_data = {
-                "timestamp": time.time(),
+                "timestamp": current_time,
                 "image_width": self.display_width,
                 "image_height": new_height,
                 "boxes": detected_boxes
             }
             bbox_msg.data = json.dumps(bbox_data)
             self.bbox_publisher.publish(bbox_msg)
-            self.get_logger().info(f'Published {len(detected_boxes)} bounding boxes')
             
             # 실제 탐지된 사람 수 표시 (신뢰도 임계값을 통과한 사람만 카운트)
             cv2.putText(flipped_vertical, f'People detected: {len(detected_boxes)}', (10, 30), 
                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
             
             self.latest_image = flipped_vertical
+            self.last_process_time = current_time
         except Exception as e:
             self.get_logger().error(f'Error processing image: {str(e)}')
 

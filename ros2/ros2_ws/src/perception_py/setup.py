@@ -11,7 +11,7 @@ setup(
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
     ],
-    install_requires=['setuptools'],
+    install_requires=['setuptools', 'cv-bridge', 'opencv-python'],
     zip_safe=True,
     maintainer='SSAFY',
     maintainer_email='kjw4410@naver.com',

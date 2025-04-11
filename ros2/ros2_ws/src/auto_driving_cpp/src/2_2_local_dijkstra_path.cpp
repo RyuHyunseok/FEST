@@ -100,7 +100,7 @@ public:
         plan_timer_ = create_wall_timer(
             100ms, std::bind(&LocalPathPlanner::plan_path, this));
             
-        RCLCPP_INFO(get_logger(), "Local Path Planner initialized");
+        // RCLCPP_INFO(get_logger(), "Local Path Planner initialized");
     }
 
 private:
@@ -108,7 +108,7 @@ private:
     {
         global_path_ = *msg;
         has_global_path_ = true;
-        RCLCPP_INFO(get_logger(), "Received global path with %zu points", msg->poses.size());
+        // RCLCPP_INFO(get_logger(), "Received global path with %zu points", msg->poses.size());
     }
 
     void cost_map_callback(const nav_msgs::msg::OccupancyGrid::SharedPtr msg)
@@ -184,7 +184,7 @@ private:
                                        global_path_.poses[i].pose.position.y)) {
                     collision_detected = true;
                     collision_idx = i;
-                    RCLCPP_INFO(get_logger(), "Collision detected at path point %zu", i);
+                    // RCLCPP_INFO(get_logger(), "Collision detected at path point %zu", i);
                     break;
                 }
                 
@@ -245,11 +245,11 @@ private:
                 
                 // 계산된 경로 발행
                 local_path_pub_->publish(new_path);
-                RCLCPP_INFO(get_logger(), "Published local path with %zu points (Dijkstra)", new_path.poses.size());
+                // RCLCPP_INFO(get_logger(), "Published local path with %zu points (Dijkstra)", new_path.poses.size());
                 is_replanning_ = false;  // 성공적으로 경로를 찾았을 때만 재계획 상태 해제
             } else {
                 // 우회 경로를 찾지 못한 경우, 비어있는 경로 발행
-                RCLCPP_WARN(get_logger(), "Failed to find a bypass path");
+                // RCLCPP_WARN(get_logger(), "Failed to find a bypass path");
                 nav_msgs::msg::Path empty_path;
                 empty_path.header.frame_id = "map";
                 empty_path.header.stamp = now();
@@ -260,7 +260,7 @@ private:
             is_replanning_ = false;  // 충돌이 없는 경우 재계획 상태 해제
             // 추출한 서브패스 발행
             local_path_pub_->publish(subpath);
-            RCLCPP_INFO(get_logger(), "Published local path with %zu points (No collision)", subpath.poses.size());
+            // RCLCPP_INFO(get_logger(), "Published local path with %zu points (No collision)", subpath.poses.size());
         }
     }
 
