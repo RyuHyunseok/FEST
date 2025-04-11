@@ -2,6 +2,10 @@
 
 이 문서는 `auto_driving_cpp` 패키지 내의 각 노드가 사용하는 토픽 정보를 정리합니다.
 
+## 1. 노드 분류
+- (판단) 경로 계획 관련 노드
+- (제어) 로봇 제어 관련 노드
+
 ## 2. 경로 계획 관련 노드
 
 ### 2_1_global_dijkstra_path
@@ -12,10 +16,11 @@
   - `/cost_map` (`nav_msgs/msg/OccupancyGrid`): 전역 비용 맵
   - `/odom` (`nav_msgs/msg/Odometry`): 로봇의 현재 위치
   - `/goal_point` (`geometry_msgs/msg/Point`): 목표점 좌표
+  - `/goal_reached` (`std_msgs/msg/Bool`): 목표점 도달 여부
 
 - **발행 토픽**:
   - `/global_path` (`nav_msgs/msg/Path`): 계획된 전역 경로
-  - `/planning_points` (`visualization_msgs/msg/MarkerArray`): 경로 계획 시각화
+  - `/planning_points` (`visualization_msgs/msg/MarkerArray`): 경로 계획 시각화 마커
 
 ### 2_1_global_path_publisher
 
@@ -51,6 +56,8 @@
 - **발행 토픽**:
   - `/local_path` (`nav_msgs/msg/Path`): 선택된 지역 경로
   - `/candidate_paths` (`nav_msgs/msg/Path`): 생성된 후보 경로들
+
+## 3. 로봇 제어 관련 노드
 
 ### 3_follow_unity
 
@@ -92,7 +99,7 @@
 - **발행 토픽**:
   - `/goal_point` (`geometry_msgs/msg/Point`): 목표점 정보
 
-## ROS2 메시지 타입 헤더 파일 정리
+## 4. ROS2 메시지 타입 헤더 파일 정리
 
 이 섹션에서는 프로젝트에서 사용하는 ROS2 메시지 타입 헤더 파일들을 분류하여 정리합니다.
 
@@ -103,6 +110,7 @@ ROS2에서 기본적으로 제공하는 표준 메시지 타입 헤더 파일들
 1. **geometry_msgs**: 로봇의 기하학적 데이터 표현 메시지
    - `geometry_msgs/msg/twist.hpp`: 선속도와 각속도를 포함한 로봇 제어 명령
    - `geometry_msgs/msg/point.hpp`: 3D 공간의 점 좌표(x, y, z)
+   - `geometry_msgs/msg/pose_stamped.hpp`: 타임스탬프가 있는 위치와 방향
 
 2. **nav_msgs**: 내비게이션 관련 메시지
    - `nav_msgs/msg/odometry.hpp`: 로봇의 위치와 속도 추정치
