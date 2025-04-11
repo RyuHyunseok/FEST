@@ -391,13 +391,13 @@ private:
                 if (visited[*neighbor]) continue;
 
                 // 이동 비용 계산
-                // double new_cost = current->cost + move_cost[i] * (1.0 + cost_penalty);
-                // 또는 휴리스틱을 추가하여 탐색 효율성을 개선합니다
-                double heuristic_cost = std::sqrt(
-                    std::pow(new_x - goal.x, 2) + 
-                    std::pow(new_y - goal.y, 2)
-                );
-                double new_cost = current->cost + move_cost[i] * (1.0 + cost_penalty) + heuristic_cost;
+                double new_cost = current->cost + move_cost[i] * (1.0 + cost_penalty);
+                // // 휴리스틱 비용 추가 (A* 알고리즘과 유사하게 동작)
+                // double heuristic_cost = std::sqrt(
+                //     std::pow(new_x - goal.x, 2) + 
+                //     std::pow(new_y - goal.y, 2)
+                // );
+                // double new_cost = current->cost + move_cost[i] * (1.0 + cost_penalty) + heuristic_cost;
 
                 // 더 나은 경로를 찾았거나 이전에 방문하지 않은 노드인 경우
                 auto cost_it = costs.find(*neighbor);

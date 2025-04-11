@@ -14,10 +14,11 @@
 - `/cost_map` (nav_msgs/msg/OccupancyGrid): 전역 비용 맵
 - `/odom` (nav_msgs/msg/Odometry): 로봇의 현재 위치
 - `/goal_point` (geometry_msgs/msg/Point): 목표점 좌표
+- `/goal_reached` (std_msgs/msg/Bool): 목표점 도달 여부
 
 ### 발행
 - `/global_path` (nav_msgs/msg/Path): 계획된 전역 경로
-- `/planning_points` (visualization_msgs/msg/MarkerArray): 경로 계획 시각화
+- `/planning_points` (visualization_msgs/msg/MarkerArray): 경로 계획 시각화 마커 (시작점과 목표점 표시)
 
 ## 주요 매개변수
 - 비용 패널티 계산 방식
