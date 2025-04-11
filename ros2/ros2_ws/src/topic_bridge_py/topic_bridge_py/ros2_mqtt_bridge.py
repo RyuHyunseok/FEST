@@ -14,10 +14,7 @@ import json
 import paho.mqtt.client as mqtt
 from geometry_msgs.msg import Pose
 import math
-<<<<<<< HEAD
-=======
 from std_msgs.msg import String
->>>>>>> origin/develop
 
 class ROS2ToMQTTBridge(Node):
     def __init__(self):
@@ -31,17 +28,12 @@ class ROS2ToMQTTBridge(Node):
         self.mqtt_client = mqtt.Client()
         self.mqtt_client.on_connect = self.on_connect
         self.position_topic = f"robots/{self.robot_id}/position"
-<<<<<<< HEAD
-        
-        # MQTT 브로커 연결
-        try:
-=======
         self.robot_status_topic = f"robots/{self.robot_id}/status"
-        
+        self.prowler_topic = 'prowler/new'
+
         # MQTT 브로커 연결
         try:
             # self.mqtt_client.connect('j12d106.p.ssafy.io', 1883, 60)
->>>>>>> origin/develop
             self.mqtt_client.connect('localhost', 1883, 60)
             self.mqtt_client.loop_start()
             self.get_logger().info("Connected to MQTT broker")
@@ -55,8 +47,6 @@ class ROS2ToMQTTBridge(Node):
             self.position_callback,
             10  # QoS 프로파일
         )
-<<<<<<< HEAD
-=======
 
         self.subscription = self.create_subscription(
             String,
@@ -79,7 +69,13 @@ class ROS2ToMQTTBridge(Node):
             self.fire_status_callback,
             10  # QoS 프로파일
         )
->>>>>>> origin/develop
+
+        self.prowler_subscription = self.create_subscription(
+            String,
+            '/prowler/new',
+            self.prowler_callback,
+            10
+        )
         
         # 타이머 설정 (MQTT 연결 상태 체크)
         self.timer = self.create_timer(5.0, self.check_connection)
@@ -87,11 +83,7 @@ class ROS2ToMQTTBridge(Node):
     def on_connect(self, client, userdata, flags, rc):
         """MQTT 연결 성공 시 호출될 콜백"""
         self.get_logger().info(f"Connected to MQTT broker with result code: {rc}")
-<<<<<<< HEAD
-    
-=======
 
->>>>>>> origin/develop
     def check_connection(self):
         """정기적으로 MQTT 연결 상태 확인"""
         if self.mqtt_client.is_connected():
@@ -113,6 +105,22 @@ class ROS2ToMQTTBridge(Node):
         # 라디안을 도(degree)로 변환
         return math.degrees(yaw)
     
+    def prowler_callback(self, msg):
+        
+        prowler_data = json.loads(msg.data)
+
+        prowler_info = {
+            "prowler_id": prowler_data['prowler_id'],
+            "count": prowler_data['count'],
+            # prowler_data['detected_at']
+        }
+
+        serialized_prowler = json.dumps(prowler_info)
+
+        self.mqtt_client.publish(self.prowler_topic, serialized_prowler)
+
+
+
     def position_callback(self, msg):
         """ROS2 위치 토픽 메시지 수신 시 호출되는 콜백"""
         try:
@@ -143,8 +151,6 @@ class ROS2ToMQTTBridge(Node):
         except Exception as e:
             self.get_logger().error(f'Error processing position data: {e}')
     
-<<<<<<< HEAD
-=======
     def robot_status_callback(self, msg):
 
         try: 
@@ -227,7 +233,6 @@ class ROS2ToMQTTBridge(Node):
             self.get_logger().error(f'Error processing fire status update: {e}')
 
 
->>>>>>> origin/develop
     def on_shutdown(self):
         """노드 종료 시 호출될 메소드"""
         self.get_logger().info("Shutting down ROS2 to MQTT bridge...")
@@ -250,8 +255,4 @@ def main(args=None):
         rclpy.shutdown()
 
 if __name__ == '__main__':
-<<<<<<< HEAD
     main()
-=======
-    main()
->>>>>>> origin/develop
